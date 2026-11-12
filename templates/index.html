@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="VolunteerConnect helps teachers, coordinators, and cleared volunteers coordinate classroom support across six elementary schools."
+    >
+    <title>VolunteerConnect | Every helping hand, in the right place</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=2) }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <nav class="navigation page-width" aria-label="Main navigation">
+        <a class="brand" href="#home" aria-label="VolunteerConnect home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M16 27s-11-6.7-11-14a6 6 0 0 1 11-3.1A6 6 0 0 1 27 13c0 7.3-11 14-11 14Z" fill="currentColor"/>
+              <path d="M9 16h4l2-4 3.2 8 2-4H24" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span>Volunteer<span class="brand-accent">Connect</span></span>
+        </a>
+
+        <div class="nav-links">
+          <a class="nav-link" href="#home" aria-current="page">Home</a>
+          <a class="nav-link" href="#how-it-works">How It Works</a>
+          <a class="button button-small button-outline" href="#access-coming-soon">Login</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero section-space" id="home" aria-labelledby="hero-title">
+        <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+        <div class="hero-content page-width">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> A community that shows up</p>
+            <h1 id="hero-title">Connecting Volunteers <span>with Classrooms</span></h1>
+            <p class="hero-description">
+              Bringing teachers, coordinators, and cleared volunteers together to make classroom support easier across six elementary schools.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#access-coming-soon">
+                Get Started
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                  <path d="M4.2 10h11.6m-4.8-4.8 4.8 4.8-4.8 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <a class="text-link" href="#how-it-works">See how it works</a>
+            </div>
+            <div class="hero-note">
+              <span class="note-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2.5 3.3 5.2v4.2c0 4 2.8 6.7 6.7 8.1 3.9-1.4 6.7-4.1 6.7-8.1V5.2L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <path d="m7.2 10 1.8 1.8 3.8-3.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              Thoughtful coordination. A stronger school community.
+            </div>
+          </div>
+
+          <div class="hero-visual" aria-hidden="true">
+            <div class="visual-orbit orbit-outer"></div>
+            <div class="visual-orbit orbit-inner"></div>
+            <div class="visual-center">
+              <span class="center-icon">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <path d="M8 20.5 24 8l16 12.5v17a2.5 2.5 0 0 1-2.5 2.5h-27A2.5 2.5 0 0 1 8 37.5v-17Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                  <path d="M19 40V26h10v14M16 20h.1M24 20h.1M32 20h.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <strong>Six schools</strong>
+              <span>one caring community</span>
+            </div>
+            <div class="orbit-card orbit-card-top">
+              <span class="orbit-icon coordinator-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M3.5 19v-1.2A4.8 4.8 0 0 1 8.3 13h1.4a4.8 4.8 0 0 1 4.8 4.8V19H3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                  <path d="m16 10 1.5 1.5L21 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Coordinators</strong><small>Bring it all together</small></span>
+            </div>
+            <div class="orbit-card orbit-card-right">
+              <span class="orbit-icon teacher-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 5.5h16v11H4zM8 20h8M12 16.5V20M8 9h8M8 12.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Teachers</strong><small>Ask for a helping hand</small></span>
+            </div>
+            <div class="orbit-card orbit-card-left">
+              <span class="orbit-icon volunteer-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M5.5 20v-1.4a6.5 6.5 0 0 1 13 0V20h-13Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                  <path d="m9.5 14.7 2.5 2 2.5-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span><strong>Volunteers</strong><small>Show up where it matters</small></span>
+            </div>
+            <span class="sparkle sparkle-one"></span>
+            <span class="sparkle sparkle-two"></span>
+          </div>
+        </div>
+        <div class="hero-bottom page-width">
+          <span>More hands to help. More moments to make.</span>
+          <span class="hero-bottom-line" aria-hidden="true"></span>
+        </div>
+      </section>
+
+      <section class="roles-section section-space" aria-labelledby="roles-title">
+        <div class="page-width">
+          <div class="section-heading">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> Everyone has a part to play</p>
+            <h2 id="roles-title">One team, three ways to make a difference</h2>
+            <p>Simple tools help every person focus on what matters: showing up for students and schools.</p>
+          </div>
+
+          <div class="role-grid">
+            <article class="role-card coordinator-card">
+              <div class="role-card-top">
+                <span class="role-icon">
+                  <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <circle cx="10" cy="9" r="3.2" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M4 22v-1.4a5.8 5.8 0 0 1 5.8-5.8h.4a5.8 5.8 0 0 1 5.8 5.8V22H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="m17 10 2 2 4-4M18 18h5M18 22h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="role-number">01</span>
+              </div>
+              <h3>Coordinator</h3>
+              <p>Keep the whole volunteer program moving smoothly from one place.</p>
+              <ul>
+                <li>Manage schools and volunteer clearances</li>
+                <li>Create and staff volunteer shifts</li>
+                <li>View service reports across schools</li>
+              </ul>
+              <span class="role-card-accent" aria-hidden="true"></span>
+            </article>
+
+            <article class="role-card teacher-card">
+              <div class="role-card-top">
+                <span class="role-icon">
+                  <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M4 5.5h20v14H4zM9 24h10M14 19.5V24M8.5 10h11M8.5 14h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="m19 16 1.5 1.5L23 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="role-number">02</span>
+              </div>
+              <h3>Teacher</h3>
+              <p>Find the extra support you need for classroom activities and events.</p>
+              <ul>
+                <li>Request volunteer help for your school</li>
+                <li>Confirm volunteer attendance</li>
+                <li>Help ensure service hours are recorded</li>
+              </ul>
+              <span class="role-card-accent" aria-hidden="true"></span>
+            </article>
+
+            <article class="role-card volunteer-card">
+              <div class="role-card-top">
+                <span class="role-icon">
+                  <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <circle cx="14" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M6.5 23v-1.6a7.5 7.5 0 0 1 15 0V23h-15Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="m11 15.5 3 2.5 3-2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="role-number">03</span>
+              </div>
+              <h3>Volunteer</h3>
+              <p>Put your time and talents to work in a welcoming school community.</p>
+              <ul>
+                <li>Find shifts at schools you’re cleared for</li>
+                <li>Join a waitlist when a shift is full</li>
+                <li>Track your volunteer service hours</li>
+              </ul>
+              <span class="role-card-accent" aria-hidden="true"></span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="process-section section-space" id="how-it-works" aria-labelledby="process-title">
+        <div class="page-width">
+          <div class="process-heading">
+            <div>
+              <p class="eyebrow eyebrow-light"><span class="eyebrow-dot"></span> Clear steps, meaningful impact</p>
+              <h2 id="process-title">A little coordination goes a long way</h2>
+            </div>
+            <p>From a classroom request to confirmed service hours, everyone stays on the same page.</p>
+          </div>
+          <ol class="process-list">
+            <li class="process-step">
+              <span class="step-number">01</span>
+              <span class="step-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <path d="M5 7h22v15H5zM10 27h12M16 22v5M10 12h12M10 16.5h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <h3>Teacher requests help</h3>
+              <p>A teacher lets their school coordinator know what support is needed.</p>
+            </li>
+            <li class="process-step">
+              <span class="step-number">02</span>
+              <span class="step-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <rect x="5" y="7" width="22" height="21" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M10 4v6M22 4v6M5 13h22M10 18h4M10 22h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <h3>Coordinator creates shifts</h3>
+              <p>The coordinator turns the request into shifts volunteers can join.</p>
+            </li>
+            <li class="process-step">
+              <span class="step-number">03</span>
+              <span class="step-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <circle cx="12" cy="11" r="4" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M4.5 27v-1.7a7.5 7.5 0 0 1 15 0V27h-15Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  <path d="m20 16 2.5 2.5L28 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <h3>Cleared volunteers sign up</h3>
+              <p>Eligible volunteers choose a shift that works for them.</p>
+            </li>
+            <li class="process-step">
+              <span class="step-number">04</span>
+              <span class="step-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <path d="m7 16 6 6L25 10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </span>
+              <h3>Attendance is confirmed</h3>
+              <p>The teacher confirms attendance, and volunteer hours are logged.</p>
+            </li>
+          </ol>
+          <div class="process-connector" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="closing-section page-width" aria-labelledby="closing-title">
+        <div class="closing-card">
+          <div class="closing-decoration closing-decoration-one" aria-hidden="true"></div>
+          <div class="closing-decoration closing-decoration-two" aria-hidden="true"></div>
+          <div class="closing-content">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> Better together</p>
+            <h2 id="closing-title">Every helping hand makes a difference.</h2>
+            <p>Let’s make it easier for our school community to show up for one another.</p>
+            <a class="button button-primary" href="#access-coming-soon">
+              Get Started
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                <path d="M4.2 10h11.6m-4.8-4.8 4.8 4.8-4.8 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+          <div class="closing-art" aria-hidden="true">
+            <span class="art-circle art-circle-one"></span>
+            <span class="art-circle art-circle-two"></span>
+            <span class="art-heart">♥</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="access-coming-soon">
+      <div class="footer-main page-width">
+        <div class="footer-brand">
+          <a class="brand brand-footer" href="#home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none">
+                <path d="M16 27s-11-6.7-11-14a6 6 0 0 1 11-3.1A6 6 0 0 1 27 13c0 7.3-11 14-11 14Z" fill="currentColor"/>
+                <path d="M9 16h4l2-4 3.2 8 2-4H24" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>Volunteer<span class="brand-accent">Connect</span></span>
+          </a>
+          <p>Bringing people together to support classrooms and strengthen our school community.</p>
+        </div>
+        <div class="footer-access">
+          <p class="footer-label">Account access</p>
+          <p>Login and registration are coming soon.</p>
+          <span class="access-status"><span aria-hidden="true"></span> Public homepage preview</span>
+        </div>
+      </div>
+      <div class="footer-bottom page-width">
+        <span>Made for our school community</span>
+        <span>VolunteerConnect</span>
+      </div>
+    </footer>
+  </body>
+</html>
