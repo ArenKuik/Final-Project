@@ -124,12 +124,14 @@ These are the back-end checks that make this more than storing records. Each run
 2. **Capacity.** A shift accepts sign-ups up to its capacity; the next person who passes the other rules goes to the waitlist.
 3. **Overlap.** A volunteer cannot hold two sign-ups whose times overlap.
 4. **Travel buffer (Phase 2).** Back-to-back shifts at different schools need a gap of at least N minutes (configurable, e.g. 30).
-5. **Waitlist promotion.** When a confirmed volunteer cancels, the earliest waitlisted volunteer who still passes rules 1, 3 and 4 is promoted automatically.
+5. **Waitlist promotion.** When a confirmed volunteer cancels, waitlisted volunteers are considered in the order they joined (`created_at`), and the first one who still passes rules 1 and 3 (plus rule 4 once the travel buffer exists) and whose sign-ups are not blocked (rule 8) is promoted automatically. A skipped volunteer stays on the waitlist in the same position. If no one is eligible, the spot stays open.
 6. **Swap validation (Phase 2).** A swap is approved only if both volunteers pass rules 1, 3 and 4 for their new shifts.
 7. **Cancellation window.** Cancelling within 24 hours of the start counts as a late cancel.
 8. **No-show strikes (Phase 2).** Three no-shows or late cancels in 60 days block new sign-ups for 14 days.
 9. **Hours.** Only shifts marked present count; hours = shift end minus start.
 10. **Attendance timing.** Attendance can be confirmed only after the shift has started.
+11. **Rejoining.** A volunteer who cancels can sign up for the same shift again. This reuses their existing signups row and sets `created_at` to now, so they go to the back of the waitlist. This is why the unique (shift_id, volunteer_id) constraint is kept: each volunteer has at most one row per shift, whatever its history.
+12. **Waitlist expiry.** When a shift starts, any remaining waitlisted sign-ups become cancelled.
 
 **Time handling.** All times are stored as `timestamptz`. Rules 7 and 10 compare against the current time in `America/Los_Angeles`, because Cloud Run runs in UTC.
 
@@ -207,6 +209,8 @@ Each test uses separate accounts in separate browser windows (one normal, one pr
 | Persistence | Create data, redeploy, reload | All accounts and shifts still there |
 | Waitlist | Confirmed volunteer cancels | First waitlisted volunteer promoted |
 | Waitlist | Confirmed volunteer cancels; first waitlisted volunteer now has an overlapping sign-up | That volunteer is skipped; the next eligible one is promoted |
+| Waitlist | Several volunteers join the waitlist, then confirmed volunteers cancel one at a time | Volunteers are promoted in the order they joined |
+| Waitlist | Volunteer cancels, then signs up again for the same shift | Goes to the back of the waitlist, or confirmed if there is space |
 
 Record each result in the README's test section.
 
