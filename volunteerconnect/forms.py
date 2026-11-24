@@ -1,12 +1,19 @@
 """Flask-WTF forms. Every FlaskForm includes a hidden CSRF token automatically."""
 from flask_wtf import FlaskForm
-from wtforms import EmailField, PasswordField, RadioField, StringField
-from wtforms.validators import DataRequired, Length, Regexp, ValidationError
+from wtforms import (DateField, EmailField, PasswordField, RadioField, SelectField,
+                     SelectMultipleField, StringField, widgets)
+from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
 
 # A simple shape check (something@something.something). Good enough for a
 # login name; we never send email, so we don't need stricter validation.
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 MIN_PASSWORD_LENGTH = 10
+
+# The clearance types the app knows about (stored values, display labels).
+CLEARANCE_TYPES = [
+    ("tb_test", "TB test"),
+    ("background_check", "Background check"),
+]
 
 
 class RegisterForm(FlaskForm):
@@ -39,5 +46,29 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired(), Length(max=200)])
 
 
-class LogoutForm(FlaskForm):
-    """No fields: it exists so the logout button sends a CSRF token."""
+class ActionForm(FlaskForm):
+    """No fields: used for one-click POST buttons (revoke, regenerate...)
+    so that they still send a CSRF token."""
+
+
+class LogoutForm(ActionForm):
+    """The navbar's logout button."""
+
+
+class MultiCheckboxField(SelectMultipleField):
+    """A list of checkboxes; only values from `choices` are accepted."""
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
+
+
+class SchoolForm(FlaskForm):
+    name = StringField("School name", validators=[DataRequired(), Length(max=120)])
+    address = StringField("Address", validators=[Optional(), Length(max=200)])
+    required_clearances = MultiCheckboxField("Required clearances", choices=CLEARANCE_TYPES)
+
+
+class ClearanceForm(FlaskForm):
+    type = SelectField("Clearance type", choices=CLEARANCE_TYPES, validators=[DataRequired()])
+    # The "not in the past" check needs today's date in Los Angeles, which
+    # the route gets from the database (see clearances.py).
+    expires_on = DateField("Expires on", validators=[DataRequired(message="Enter an expiry date.")])
