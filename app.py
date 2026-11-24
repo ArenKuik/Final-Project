@@ -1,11 +1,8 @@
+"""Entry point. gunicorn runs `app:app`, which is the Flask app built below."""
+from volunteerconnect import create_app
 
-from flask import Flask, render_template
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return render_template("index.html")
+app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Local run only; debug mode comes from FLASK_DEBUG (off by default).
+    app.run()
