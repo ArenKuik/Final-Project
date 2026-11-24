@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Not allowed | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <h1>You don't have permission to do that</h1>
+    <p>This page or action isn't available for your account.</p>
+    <a class="button button-primary" href="{{ url_for('main.dashboard') if current_user else url_for('main.home') }}">Go back</a>
+  </div>
+</section>
+{% endblock %}
