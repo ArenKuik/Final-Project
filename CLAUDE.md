@@ -1,0 +1,13 @@
+# Project rules for Claude Code
+- Read PRD.md before making any change. It is the source of truth for roles, permissions, business rules and the data model.
+- Never commit to main. Work on the current feature branch only.
+- Stack: Flask + Jinja templates, PostgreSQL on Neon via psycopg, gunicorn on Google Cloud Run.
+- Every route checks login, role, and record ownership on the server. Return 403 when a check fails. Hiding a button is not a permission check.
+- Every state change is a POST with a CSRF token (Flask-WTF).
+- Parameterized SQL only. Never build SQL with f-strings or string concatenation.
+- Business rules that read-then-write (sign-up, cancel, promotion) run in one transaction and lock the shift row with SELECT ... FOR UPDATE.
+- Store times as timestamptz. Compare "now" in America/Los_Angeles.
+- Secrets come from environment variables (.env locally via python-dotenv). Never hardcode or print them.
+- Never DROP tables. Schema changes use ALTER TABLE in schema.sql, written so they are safe to run again.
+- Keep code simple and commented enough that a student can explain every file in a presentation.
+- After each feature, write or update tests in tests/ and run them.
