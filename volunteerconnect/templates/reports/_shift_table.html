@@ -1,0 +1,24 @@
+{# Present shifts with hours and a total row. Used by my_hours.html and volunteer_hours.html. #}
+{% macro shift_table(shifts, total) %}
+  {% if shifts %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Time</th><th>School</th><th>Activity</th><th class="num">Hours</th></tr></thead>
+        <tbody>
+          {% for s in shifts %}
+            <tr>
+              <td>{{ s.start_local.strftime("%Y-%m-%d") }}</td>
+              <td>{{ s.start_local.strftime("%H:%M") }}–{{ s.end_local.strftime("%H:%M") }}</td>
+              <td>{{ s.school_name }}</td>
+              <td>{{ s.activity or "—" }}</td>
+              <td class="num">{{ s.hours|hours }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr><th colspan="4">Total</th><th class="num">{{ total|hours }}</th></tr></tfoot>
+      </table>
+    </div>
+  {% else %}
+    <p>No hours yet. Hours appear once a teacher marks a shift as present.</p>
+  {% endif %}
+{% endmacro %}
