@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import PASSWORD_HASH_METHOD, query
 from .forms import LoginForm, LogoutForm, RegisterForm
+from .volunteer_status import volunteer_statuses
 
 bp = Blueprint("auth", __name__)
 
@@ -33,6 +34,10 @@ def load_current_user():
     if g.user is None:
         # The account no longer exists; forget the stale session.
         session.clear()
+    elif g.user["role"] == "volunteer":
+        # A volunteer's status is derived from unexpired clearances, never
+        # read from the stored column (see volunteer_status.py).
+        g.user["status"] = volunteer_statuses([user_id])[user_id]
 
 
 @bp.route("/register", methods=["GET", "POST"])
