@@ -13,7 +13,7 @@ HOURS_BY_VOLUNTEER_SQL below is that calculation; the hours pages will use it.
 """
 from werkzeug.exceptions import NotFound
 
-from .signup_rules import lock_shift
+from .signup_rules import lock_shift, sync_shift_status
 
 OUTCOMES = ("present", "no_show")
 MARKABLE = ("confirmed", "present", "no_show")  # waitlisted/cancelled can't be marked
@@ -84,11 +84,19 @@ def mark(cur, signup_id, outcome):
 
 
 def close_shift(cur, shift_id):
-    """Coordinator: mark the shift completed once every confirmed volunteer is marked."""
+    """Coordinator: mark the shift completed, once its scheduled end time has
+    passed and every confirmed volunteer is marked."""
     shift = lock_shift(cur, shift_id)
     problem = check_can_mark(cur, shift)
     if problem:
         raise AttendanceRefused(problem)
+    if not shift["ended"]:
+        cur.execute(
+            "SELECT to_char(%s AT TIME ZONE 'America/Los_Angeles', 'Mon DD at HH24:MI') AS ends",
+            (shift["end_at"],),
+        )
+        raise AttendanceRefused("A shift can be closed only after it has ended "
+                                f"({cur.fetchone()['ends']}).")
     cur.execute("SELECT count(*) AS n FROM signups WHERE shift_id = %s AND status = 'confirmed'",
                 (shift_id,))
     unmarked = cur.fetchone()["n"]
@@ -97,3 +105,13 @@ def close_shift(cur, shift_id):
             f"{unmarked} volunteer{' still needs' if unmarked == 1 else 's still need'} to be marked "
             "before the shift can be closed.")
     cur.execute("UPDATE shifts SET status = 'completed' WHERE id = %s", (shift_id,))
+
+
+def reopen_shift(cur, shift_id):
+    """Coordinator: reopen a closed (completed) shift so attendance can be
+    corrected. Its status goes back to open or full, to match its sign-ups."""
+    shift = lock_shift(cur, shift_id)
+    if shift["status"] != "completed":
+        raise AttendanceRefused("Only a closed shift can be reopened.")
+    cur.execute("UPDATE shifts SET status = 'open' WHERE id = %s", (shift_id,))
+    sync_shift_status(cur, shift_id)

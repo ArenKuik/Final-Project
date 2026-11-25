@@ -24,6 +24,11 @@ def teacher(school):
     return make_user("teacher", school_id=school["id"])
 
 
+def ended_shift(school, **kwargs):
+    """A 2-hour shift that started 3 hours ago, so it ended an hour ago."""
+    return make_shift(school["id"], start_in=timedelta(hours=-3), hours=2, **kwargs)
+
+
 def started_shift(school, **kwargs):
     """A shift that began 30 minutes ago and runs 2 hours."""
     return make_shift(school["id"], start_in=STARTED, hours=2, **kwargs)
@@ -186,21 +191,49 @@ def test_missing_signup_is_404(client, teacher):
     assert client.post("/signups/999999999/attendance", data={"outcome": "present"}).status_code == 404
 
 
-# ---------- closing the shift ----------
+# ---------- closing and reopening the shift ----------
+
+def close(client, shift):
+    return client.post(f"/shifts/{shift['id']}/complete")
+
+
+def reopen(client, shift):
+    return client.post(f"/shifts/{shift['id']}/reopen")
+
+
+def test_close_before_end_time_refused(client, school):
+    """Started but not yet ended, everyone marked: still too early to close."""
+    shift = started_shift(school)  # started 30 min ago, ends in 90 min
+    volunteer_signup(shift, status="present")
+    login_as(client, coordinator_id())
+    resp = close(client, shift)
+    assert resp.status_code == 400
+    assert b"can be closed only after it has ended" in resp.data
+    assert shift_status(shift) == "open"
+    page = client.get(f"/shifts/{shift['id']}").data
+    assert b"Close shift" not in page and b"can be closed after it ends" in page
+
+
+def test_close_before_start_refused(client, school):
+    shift = make_shift(school["id"], start_in=timedelta(days=2))
+    login_as(client, coordinator_id())
+    assert close(client, shift).status_code == 400
+    assert shift_status(shift) == "open"
+
 
 def test_close_refused_while_someone_is_unmarked(client, school):
-    shift = started_shift(school)
-    _, marked = volunteer_signup(shift, status="present")
+    shift = ended_shift(school)
+    volunteer_signup(shift, status="present")
     volunteer_signup(shift)  # still confirmed
     login_as(client, coordinator_id())
-    resp = client.post(f"/shifts/{shift['id']}/complete")
+    resp = close(client, shift)
     assert resp.status_code == 400
     assert b"1 volunteer still needs to be marked" in resp.data
     assert shift_status(shift) == "open"
 
 
-def test_shift_completed_when_all_marked_and_closed(client, school, teacher):
-    shift = started_shift(school)
+def test_close_after_end_time_with_all_marked(client, school, teacher):
+    shift = ended_shift(school)
     _, a = volunteer_signup(shift)
     _, b = volunteer_signup(shift)
     login_as(client, teacher["id"])
@@ -208,17 +241,16 @@ def test_shift_completed_when_all_marked_and_closed(client, school, teacher):
     mark(client, b, "no_show")
 
     login_as(client, coordinator_id())
-    page = client.get(f"/shifts/{shift['id']}").data
-    assert b"Close shift" in page
-    assert client.post(f"/shifts/{shift['id']}/complete").status_code == 302
+    assert b"Close shift" in client.get(f"/shifts/{shift['id']}").data
+    assert close(client, shift).status_code == 302
     assert shift_status(shift) == "completed"
 
 
 def test_marks_locked_after_close(client, school, teacher):
-    shift = started_shift(school)
+    shift = ended_shift(school)
     _, signup = volunteer_signup(shift, status="no_show")
     login_as(client, coordinator_id())
-    client.post(f"/shifts/{shift['id']}/complete")
+    close(client, shift)
     assert shift_status(shift) == "completed"
 
     login_as(client, teacher["id"])
@@ -228,10 +260,47 @@ def test_marks_locked_after_close(client, school, teacher):
     assert status_of(signup) == "no_show"
 
 
-def test_close_before_start_refused(client, school):
-    shift = make_shift(school["id"], start_in=timedelta(days=2))
+def test_coordinator_reopens_and_marks_can_change(client, school, teacher):
+    shift = ended_shift(school, capacity=2)
+    _, a = volunteer_signup(shift, status="no_show")
+    _, b = volunteer_signup(shift, status="present")
     login_as(client, coordinator_id())
-    assert client.post(f"/shifts/{shift['id']}/complete").status_code == 400
+    close(client, shift)
+    assert shift_status(shift) == "completed"
+    assert b"Reopen shift" in client.get(f"/shifts/{shift['id']}").data
+
+    assert reopen(client, shift).status_code == 302
+    assert shift_status(shift) == "full"  # 2 of 2 spots taken (present + no_show)
+
+    # The teacher can correct the mistake, which also removes the strike.
+    run_sql("INSERT INTO strikes (volunteer_id, signup_id, reason) VALUES (%s, %s, 'no_show')",
+            (a["volunteer_id"], a["id"]))
+    login_as(client, teacher["id"])
+    assert mark(client, a, "present").status_code == 302
+    assert status_of(a) == "present"
+    assert no_show_strikes(a) == []
+
+    # And the coordinator can close it again.
+    login_as(client, coordinator_id())
+    assert close(client, shift).status_code == 302
+    assert shift_status(shift) == "completed"
+
+
+def test_teacher_and_volunteer_cannot_reopen(client, school, teacher):
+    shift = ended_shift(school, status="completed")
+    volunteer, _ = volunteer_signup(shift, status="present")
+    for user in (teacher, volunteer):
+        login_as(client, user["id"])
+        assert reopen(client, shift).status_code == 403
+    assert shift_status(shift) == "completed"
+
+
+def test_reopen_only_closed_shifts(client, school):
+    shift = ended_shift(school)
+    login_as(client, coordinator_id())
+    resp = reopen(client, shift)
+    assert resp.status_code == 400
+    assert b"Only a closed shift can be reopened" in resp.data
     assert shift_status(shift) == "open"
 
 

@@ -57,8 +57,16 @@
       <p class="form-intro">Nobody has signed up yet.</p>
     {% endif %}
 
-    {% if current_user.role == "coordinator" and can_mark %}
-      {% if unmarked == 0 %}
+    {% if current_user.role == "coordinator" and shift.status == "completed" %}
+      <form class="inline-form" method="post" action="{{ url_for('signups.reopen_shift', shift_id=shift.id) }}"
+            onsubmit="return confirm('Reopen this shift so attendance can be corrected?');">
+        {{ action_form.hidden_tag() }}
+        <button class="button button-outline" type="submit">Reopen shift</button>
+      </form>
+    {% elif current_user.role == "coordinator" and can_mark %}
+      {% if not shift.ended %}
+        <p class="form-intro">The shift can be closed after it ends ({{ shift.end_local.strftime("%H:%M") }}).</p>
+      {% elif unmarked == 0 %}
         <form class="inline-form" method="post" action="{{ url_for('signups.complete_shift', shift_id=shift.id) }}"
               onsubmit="return confirm('Close this shift? Attendance can no longer be changed.');">
           {{ action_form.hidden_tag() }}

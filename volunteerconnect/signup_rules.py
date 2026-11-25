@@ -35,6 +35,7 @@ def lock_shift(cur, shift_id):
     cur.execute(
         """SELECT sh.*, s.name AS school_name,
                   sh.start_at <= now() AS started,
+                  sh.end_at <= now() AS ended,
                   sh.start_at - now() < make_interval(hours => %s) AS starts_soon
            FROM shifts sh JOIN schools s ON s.id = sh.school_id
            WHERE sh.id = %s

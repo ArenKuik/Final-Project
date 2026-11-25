@@ -148,6 +148,7 @@ def render_shift_detail(shift_id, status=200):
     shift = query(
         """SELECT sh.*, s.name AS school_name, hr.activity, hr.room,
                   sh.start_at <= now() AS started,
+                  sh.end_at <= now() AS ended,
                   sh.start_at AT TIME ZONE 'America/Los_Angeles' AS start_local,
                   sh.end_at AT TIME ZONE 'America/Los_Angeles' AS end_local
            FROM shifts sh JOIN schools s ON s.id = sh.school_id
@@ -228,6 +229,21 @@ def complete_shift(shift_id):
         flash(str(refused), "error")
         return render_shift_detail(shift_id, status=400)
     flash("Shift closed. Hours for volunteers marked present now count.", "success")
+    return redirect(url_for("signups.shift_detail", shift_id=shift_id))
+
+
+@bp.route("/shifts/<int:shift_id>/reopen", methods=["POST"])
+@role_required("coordinator")
+def reopen_shift(shift_id):
+    if not ActionForm().validate_on_submit():
+        abort(400)
+    try:
+        with transaction() as cur:
+            attendance_rules.reopen_shift(cur, shift_id)
+    except attendance_rules.AttendanceRefused as refused:
+        flash(str(refused), "error")
+        return render_shift_detail(shift_id, status=400)
+    flash("Shift reopened. Attendance can be corrected, then close it again.", "success")
     return redirect(url_for("signups.shift_detail", shift_id=shift_id))
 
 
