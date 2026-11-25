@@ -1,8 +1,10 @@
 """Flask-WTF forms. Every FlaskForm includes a hidden CSRF token automatically."""
 from flask_wtf import FlaskForm
-from wtforms import (DateField, EmailField, PasswordField, RadioField, SelectField,
-                     SelectMultipleField, StringField, widgets)
-from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
+from wtforms import (DateField, EmailField, FieldList, Form, FormField, IntegerField,
+                     PasswordField, RadioField, SelectField, SelectMultipleField, StringField,
+                     TextAreaField, TimeField, widgets)
+from wtforms.validators import (DataRequired, InputRequired, Length, NumberRange, Optional,
+                                Regexp, ValidationError)
 
 # A simple shape check (something@something.something). Good enough for a
 # login name; we never send email, so we don't need stricter validation.
@@ -72,3 +74,57 @@ class ClearanceForm(FlaskForm):
     # The "not in the past" check needs today's date in Los Angeles, which
     # the route gets from the database (see clearances.py).
     expires_on = DateField("Expires on", validators=[DataRequired(message="Enter an expiry date.")])
+
+
+# ---------- help requests and shifts ----------
+# "Date not in the past" needs today's date in Los Angeles, which comes from
+# the database, so the routes check it (see help_requests.py).
+
+MAX_VOLUNTEERS_PER_SHIFT = 50
+MAX_SHIFTS_PER_REQUEST = 6
+
+
+def end_after_start(form, field):
+    """Shared validator: end_time must be later than start_time."""
+    start = form.start_time.data
+    if start and field.data and field.data <= start:
+        raise ValidationError("End time must be after the start time.")
+
+
+class HelpRequestForm(FlaskForm):
+    activity = StringField("Activity", validators=[DataRequired(), Length(max=120)])
+    room = StringField("Room", validators=[Optional(), Length(max=60)])
+    date = DateField("Date", validators=[DataRequired(message="Enter a date.")])
+    start_time = TimeField("Start time", validators=[DataRequired(message="Enter a start time.")])
+    end_time = TimeField("End time", validators=[DataRequired(message="Enter an end time."), end_after_start])
+    # InputRequired (not DataRequired) so that 0 gets the "at least 1" message.
+    volunteers_needed = IntegerField("Volunteers needed", validators=[
+        InputRequired(), NumberRange(min=1, max=MAX_VOLUNTEERS_PER_SHIFT,
+                                     message=f"Enter a number from 1 to {MAX_VOLUNTEERS_PER_SHIFT}."),
+    ])
+
+
+class ShiftRowForm(Form):
+    """One shift inside the approve form. A plain Form (not FlaskForm)
+    because the outer ApproveForm already carries the CSRF token."""
+    date = DateField("Date", validators=[DataRequired(message="Enter a date.")])
+    start_time = TimeField("Start", validators=[DataRequired(message="Enter a start time.")])
+    end_time = TimeField("End", validators=[DataRequired(message="Enter an end time."), end_after_start])
+    capacity = IntegerField("Volunteers", validators=[
+        InputRequired(), NumberRange(min=1, max=MAX_VOLUNTEERS_PER_SHIFT,
+                                     message=f"Enter a number from 1 to {MAX_VOLUNTEERS_PER_SHIFT}."),
+    ])
+
+
+class ApproveForm(FlaskForm):
+    shifts = FieldList(FormField(ShiftRowForm), min_entries=1, max_entries=MAX_SHIFTS_PER_REQUEST)
+
+
+class SendBackForm(FlaskForm):
+    note = TextAreaField("What needs to change?", validators=[
+        DataRequired(message="Write a note so the teacher knows what to change."), Length(max=1000),
+    ])
+
+
+class RejectForm(FlaskForm):
+    reject_note = TextAreaField("Reason (optional)", validators=[Optional(), Length(max=1000)])

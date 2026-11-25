@@ -13,6 +13,12 @@
       <div class="dashboard-actions">
         <a class="button button-primary" href="{{ url_for('schools.list_schools') }}">Schools</a>
         <a class="button button-outline" href="{{ url_for('volunteers.list_volunteers') }}">Volunteers</a>
+        <a class="button button-outline" href="{{ url_for('help_requests.list_requests') }}">Help requests</a>
+      </div>
+    {% elif current_user.role == "teacher" %}
+      <div class="dashboard-actions">
+        <a class="button button-primary" href="{{ url_for('help_requests.new_request') }}">New help request</a>
+        <a class="button button-outline" href="{{ url_for('help_requests.list_requests') }}">My school's requests</a>
       </div>
     {% else %}
       <p class="form-intro">More tools for your role are on the way.</p>

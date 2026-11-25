@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_field.html" import field_row %}
+{% block title %}{{ "Edit request" if req else "New help request" }} | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <h1>{{ "Edit and resubmit" if req else "Request volunteer help" }}</h1>
+    {% if req and req.coordinator_note %}
+      <div class="coordinator-note">
+        <strong>The coordinator asked for changes:</strong>
+        <p>{{ req.coordinator_note }}</p>
+      </div>
+    {% endif %}
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field_row(form.activity, placeholder="e.g. Reading buddies") }}
+      {{ field_row(form.room, placeholder="e.g. Room 12") }}
+      {{ field_row(form.date) }}
+      <div class="field-pair">
+        {{ field_row(form.start_time) }}
+        {{ field_row(form.end_time) }}
+      </div>
+      {{ field_row(form.volunteers_needed, min=1) }}
+      <button class="button button-primary form-submit" type="submit">{{ "Resubmit request" if req else "Submit request" }}</button>
+    </form>
+    <p class="form-switch"><a href="{{ url_for('help_requests.list_requests') }}">Back to requests</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,4 @@
+{# Status badge for a help request, e.g. {{ status_badge("changes_requested") }} #}
+{% macro status_badge(status) %}
+  <span class="status-badge request-{{ status }}">{{ status.replace("_", " ")|capitalize }}</span>
+{% endmacro %}
