@@ -7,12 +7,22 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, session
 from psycopg.errors import UniqueViolation
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .db import PASSWORD_HASH_METHOD, query
+from .db import PASSWORD_HASH_METHOD, query, transaction
 from .forms import LoginForm, LogoutForm, RegisterForm
 
 bp = Blueprint("auth", __name__)
 
 LOGIN_ERROR = "Invalid email or password."
+
+# Rate limiting: after this many failed logins for one email within the
+# window, that email is refused for the same length of time, even with the
+# right password. A successful login clears the count.
+MAX_FAILED_LOGINS = 5
+LOCKOUT_MINUTES = 15
+LOCKED_ERROR = (f"Too many failed login attempts. Please wait {LOCKOUT_MINUTES} minutes "
+                "and try again.")
+# Any fixed number: the first half of the per-email advisory lock key.
+LOGIN_LOCK_NAMESPACE = 2
 
 # Used when someone logs in with an email that doesn't exist: we still check
 # the password against this hash, so the response takes about as long as a
@@ -89,21 +99,62 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
-        user = query("SELECT id, password_hash FROM users WHERE email = %s", (email,), one=True)
-        stored_hash = user["password_hash"] if user else _DUMMY_HASH
-        password_ok = check_password_hash(stored_hash, form.password.data)
-
-        if user and password_ok:
+        result = check_login(email, form.password.data)
+        if result == "locked":
+            # Same message whether or not the email has an account.
+            form.form_errors.append(LOCKED_ERROR)
+        elif result is None:
+            # Same message whether the email or the password was wrong.
+            form.form_errors.append(LOGIN_ERROR)
+        else:
             # Start a fresh session (prevents session fixation), then
             # remember only the user's id.
             session.clear()
-            session["user_id"] = user["id"]
+            session["user_id"] = result
             return redirect(url_for("main.dashboard"))
 
-        # Same message whether the email or the password was wrong.
-        form.form_errors.append(LOGIN_ERROR)
-
     return render_template("login.html", form=form)
+
+
+def check_login(email, password):
+    """Check a login attempt with rate limiting.
+
+    Returns the user's id on success, None for a wrong email or password,
+    or "locked" if this email has had too many recent failures.
+
+    Everything runs in one transaction holding a lock for this email, so
+    several guesses sent at the same moment can't get past the limit.
+    """
+    with transaction() as cur:
+        cur.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", (LOGIN_LOCK_NAMESPACE, email))
+
+        # Locked if the last MAX_FAILED_LOGINS failures all happened within
+        # the window and the newest one was less than LOCKOUT_MINUTES ago.
+        # So the lock lasts the full LOCKOUT_MINUTES after the last failure.
+        cur.execute(
+            """SELECT count(*) = %(max)s
+                      AND max(attempted_at) > now() - make_interval(mins => %(mins)s)
+                      AND min(attempted_at) > max(attempted_at) - make_interval(mins => %(mins)s)
+                      AS locked
+               FROM (SELECT attempted_at FROM login_attempts WHERE email = %(email)s
+                     ORDER BY attempted_at DESC LIMIT %(max)s) AS recent""",
+            {"email": email, "max": MAX_FAILED_LOGINS, "mins": LOCKOUT_MINUTES},
+        )
+        if cur.fetchone()["locked"]:
+            return "locked"
+
+        cur.execute("SELECT id, password_hash FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
+        stored_hash = user["password_hash"] if user else _DUMMY_HASH
+        if user and check_password_hash(stored_hash, password):
+            cur.execute("DELETE FROM login_attempts WHERE email = %s", (email,))  # reset the count
+            return user["id"]
+
+        # Record the failure, whether or not the email has an account.
+        cur.execute("INSERT INTO login_attempts (email) VALUES (%s)", (email,))
+        # Housekeeping: old attempts no longer matter.
+        cur.execute("DELETE FROM login_attempts WHERE attempted_at < now() - interval '1 day'")
+        return None
 
 
 @bp.route("/logout", methods=["POST"])
