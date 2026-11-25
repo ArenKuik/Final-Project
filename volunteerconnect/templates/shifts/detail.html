@@ -8,6 +8,14 @@
     <button class="button button-small button-outline" type="submit">Remove</button>
   </form>
 {% endmacro %}
+{% macro mark_button(s, outcome, label) %}
+  <form class="inline-form" method="post" action="{{ url_for('signups.mark_attendance', signup_id=s.id) }}">
+    {{ action_form.hidden_tag() }}
+    <input type="hidden" name="outcome" value="{{ outcome }}">
+    <button class="button button-small {{ 'button-primary' if s.status == outcome else 'button-outline' }}"
+            type="submit" {{ 'aria-pressed=true' if s.status == outcome }}>{{ label }}</button>
+  </form>
+{% endmacro %}
 <section class="section-space">
   <div class="form-card form-card-wide">
     {% if shift.request_id %}
@@ -22,14 +30,22 @@
     </dl>
 
     <h2>Signed up</h2>
+    {% if not shift.started and shift.status not in ("cancelled", "completed") %}
+      <p class="form-intro">Attendance can be marked once the shift starts.</p>
+    {% elif shift.status == "completed" %}
+      <p class="form-intro">This shift is closed. Attendance is final.</p>
+    {% endif %}
     {% if confirmed %}
       <table class="data-table">
-        <thead><tr><th>Volunteer</th><th>Status</th>{% if current_user.role == "coordinator" %}<th></th>{% endif %}</tr></thead>
+        <thead><tr><th>Volunteer</th><th>Status</th>{% if can_mark %}<th>Attendance</th>{% endif %}{% if current_user.role == "coordinator" %}<th></th>{% endif %}</tr></thead>
         <tbody>
           {% for s in confirmed %}
             <tr>
               <td>{{ s.email }}</td>
               <td><span class="status-badge signup-{{ s.status }}">{{ s.status.replace("_", " ")|capitalize }}</span></td>
+              {% if can_mark %}
+                <td class="row-actions">{{ mark_button(s, "present", "Present") }}{{ mark_button(s, "no_show", "No-show") }}</td>
+              {% endif %}
               {% if current_user.role == "coordinator" %}
                 <td>{% if s.status == "confirmed" %}{{ remove_button(s) }}{% endif %}</td>
               {% endif %}
@@ -39,6 +55,18 @@
       </table>
     {% else %}
       <p class="form-intro">Nobody has signed up yet.</p>
+    {% endif %}
+
+    {% if current_user.role == "coordinator" and can_mark %}
+      {% if unmarked == 0 %}
+        <form class="inline-form" method="post" action="{{ url_for('signups.complete_shift', shift_id=shift.id) }}"
+              onsubmit="return confirm('Close this shift? Attendance can no longer be changed.');">
+          {{ action_form.hidden_tag() }}
+          <button class="button button-primary close-shift" type="submit">Close shift</button>
+        </form>
+      {% else %}
+        <p class="form-intro">{{ unmarked }} still to mark before the shift can be closed.</p>
+      {% endif %}
     {% endif %}
 
     <h2>Waitlist</h2>
