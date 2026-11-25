@@ -56,11 +56,13 @@ def create_app(test_config=None):
     from .help_requests import bp as help_requests_bp
     from .main import bp as main_bp
     from .schools import bp as schools_bp
+    from .signups import bp as signups_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(schools_bp)
     app.register_blueprint(volunteers_bp)
     app.register_blueprint(help_requests_bp)
+    app.register_blueprint(signups_bp)
 
     # Load the logged-in user (or None) into g.user before every request.
     app.before_request(load_current_user)

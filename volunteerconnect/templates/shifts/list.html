@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Find shifts | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading">
+      <h1>Shifts you can join</h1>
+      <a class="button button-outline" href="{{ url_for('signups.my_signups') }}">My sign-ups</a>
+    </div>
+
+    {% if current_user.status == "pending" %}
+      <p class="coordinator-note">Your account is pending. Shifts appear here once the coordinator records your clearances.</p>
+    {% endif %}
+
+    {% if shifts %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>When</th><th>School</th><th>Activity</th><th>Spots</th><th></th></tr></thead>
+          <tbody>
+            {% for s in shifts %}
+              {% set left = s.capacity - s.taken %}
+              <tr>
+                <td>{{ s.start_local.strftime("%a %b %d") }}<br>
+                    <span class="muted">{{ s.start_local.strftime("%H:%M") }}–{{ s.end_local.strftime("%H:%M") }}</span></td>
+                <td>{{ s.school_name }}</td>
+                <td>{{ s.activity or "—" }}{% if s.room %} <span class="muted">({{ s.room }})</span>{% endif %}</td>
+                <td>
+                  {% if left > 0 %}
+                    <span class="spots-left">{{ left }} of {{ s.capacity }} left</span>
+                  {% else %}
+                    <span class="status-badge shift-full">Full</span>
+                    <div class="muted">Waitlist open</div>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.my_status == "confirmed" %}
+                    <span class="status-badge signup-confirmed">Signed up</span>
+                  {% elif s.my_status == "waitlisted" %}
+                    <span class="status-badge signup-waitlisted">Waitlist #{{ s.my_position }}</span>
+                  {% else %}
+                    <form class="inline-form" method="post" action="{{ url_for('signups.sign_up', shift_id=s.id) }}">
+                      {{ action_form.hidden_tag() }}
+                      <button class="button button-small button-primary" type="submit">
+                        {{ "Sign up" if left > 0 else "Join waitlist" }}
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% elif current_user.status != "pending" %}
+      <p>No open shifts at the schools you're cleared for right now. Check back soon.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

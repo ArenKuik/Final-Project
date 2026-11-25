@@ -36,7 +36,7 @@
         <tbody>
           {% for s in shifts %}
             <tr>
-              <td>{{ s.start_local.strftime("%Y-%m-%d") }}</td>
+              <td><a href="{{ url_for('signups.shift_detail', shift_id=s.id) }}">{{ s.start_local.strftime("%Y-%m-%d") }}</a></td>
               <td>{{ s.start_local.strftime("%H:%M") }}–{{ s.end_local.strftime("%H:%M") }}</td>
               <td>{{ s.capacity }}</td>
               <td><span class="status-badge shift-{{ s.status }}">{{ s.status|capitalize }}</span></td>

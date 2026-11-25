@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My sign-ups | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading">
+      <h1>My sign-ups</h1>
+      <a class="button button-primary" href="{{ url_for('signups.list_shifts') }}">Find shifts</a>
+    </div>
+    {% if signups %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>When</th><th>School</th><th>Activity</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for s in signups %}
+              <tr>
+                <td>{{ s.start_local.strftime("%a %b %d") }}<br>
+                    <span class="muted">{{ s.start_local.strftime("%H:%M") }}–{{ s.end_local.strftime("%H:%M") }}</span></td>
+                <td>{{ s.school_name }}</td>
+                <td>{{ s.activity or "—" }}{% if s.room %} <span class="muted">({{ s.room }})</span>{% endif %}</td>
+                <td>
+                  <span class="status-badge signup-{{ s.status }}">
+                    {% if s.status == "waitlisted" %}Waitlist #{{ s.position }}{% else %}{{ s.status.replace("_", " ")|capitalize }}{% endif %}
+                  </span>
+                  {% if s.shift_status == "cancelled" %}<div class="muted">Shift cancelled</div>{% endif %}
+                </td>
+                <td>
+                  {% if s.status in ("confirmed", "waitlisted") and not s.started %}
+                    <form class="inline-form" method="post" action="{{ url_for('signups.cancel', signup_id=s.id) }}"
+                          onsubmit="return confirm('Cancel this sign-up?');">
+                      {{ action_form.hidden_tag() }}
+                      <button class="button button-small button-outline" type="submit">Cancel</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>You haven't signed up for any shifts yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -72,14 +72,43 @@ def make_request(school_id, teacher_id, status="submitted", day=None,
     )
 
 
-def make_shift(school_id, request_id=None, status="open"):
-    """Insert a shift directly (30 days ahead, 09:00-11:00 LA time); returns the row."""
-    day = future(30)
+def make_shift(school_id, request_id=None, status="open", start_in=None, hours=2, capacity=2):
+    """Insert a shift directly; returns the row.
+
+    By default it is 30 days ahead, 09:00-11:00 Los Angeles time. Pass
+    start_in (a timedelta from now) for a shift at a precise moment, e.g.
+    timedelta(hours=10) for a shift that starts in 10 hours."""
+    if start_in is None:
+        day = future(30)
+        return one(
+            "INSERT INTO shifts (request_id, school_id, start_at, end_at, capacity, status) VALUES "
+            "(%s, %s, (%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles', "
+            "(%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles' + make_interval(hours => %s), "
+            "%s, %s) RETURNING *",
+            (request_id, school_id, day, day, hours, capacity, status),
+        )
     return one(
         "INSERT INTO shifts (request_id, school_id, start_at, end_at, capacity, status) VALUES "
-        "(%s, %s, (%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles', "
-        "(%s::date + '11:00'::time) AT TIME ZONE 'America/Los_Angeles', 2, %s) RETURNING *",
-        (request_id, school_id, day, day, status),
+        "(%s, %s, date_trunc('minute', now()) + %s, date_trunc('minute', now()) + %s + make_interval(hours => %s), "
+        "%s, %s) RETURNING *",
+        (request_id, school_id, start_in, start_in, hours, capacity, status),
+    )
+
+
+def make_clearance(volunteer_id, type_="tb_test", expires_on=None):
+    """Record a clearance directly (verified by the seeded coordinator)."""
+    return one(
+        "INSERT INTO clearances (volunteer_id, type, verified_by, expires_on) "
+        "VALUES (%s, %s, %s, %s) RETURNING *",
+        (volunteer_id, type_, coordinator_id(), expires_on or future(365)),
+    )
+
+
+def make_signup(shift_id, volunteer_id, status="confirmed"):
+    """Insert a sign-up directly, skipping the rules (for setting up a scenario)."""
+    return one(
+        "INSERT INTO signups (shift_id, volunteer_id, status) VALUES (%s, %s, %s) RETURNING *",
+        (shift_id, volunteer_id, status),
     )
 
 
@@ -106,6 +135,12 @@ def login_as(client, user_id):
 
 def delete_test_data():
     """Remove everything the tests created. Order matters because of foreign keys."""
+    run_sql("DELETE FROM strikes WHERE volunteer_id IN "
+            "(SELECT id FROM users WHERE email LIKE 'test-%%@example.test')")
+    run_sql("DELETE FROM signups WHERE volunteer_id IN "
+            "(SELECT id FROM users WHERE email LIKE 'test-%%@example.test') OR shift_id IN "
+            "(SELECT sh.id FROM shifts sh JOIN schools s ON s.id = sh.school_id "
+            "WHERE s.name LIKE 'TEST %%' OR s.invite_code LIKE 'TEST-%%')")
     run_sql("DELETE FROM shifts WHERE school_id IN "
             "(SELECT id FROM schools WHERE name LIKE 'TEST %%' OR invite_code LIKE 'TEST-%%')")
     run_sql("DELETE FROM help_requests WHERE school_id IN "
@@ -124,7 +159,9 @@ def counts():
         "(SELECT string_agg(invite_code || name || coalesce(array_to_string(required_clearances, ','), ''), '|' ORDER BY id) FROM schools) AS school_data, "
         "(SELECT string_agg(type || expires_on::text, '|' ORDER BY id) FROM clearances) AS clearance_data, "
         "(SELECT string_agg(status || coalesce(coordinator_note, '') || activity || date::text, '|' ORDER BY id) FROM help_requests) AS request_data, "
-        "(SELECT string_agg(status || capacity::text || start_at::text, '|' ORDER BY id) FROM shifts) AS shift_data"
+        "(SELECT string_agg(status || capacity::text || start_at::text, '|' ORDER BY id) FROM shifts) AS shift_data, "
+        "(SELECT string_agg(status || created_at::text, '|' ORDER BY id) FROM signups) AS signup_data, "
+        "(SELECT count(*) FROM strikes) AS strikes"
     )
 
 
