@@ -104,6 +104,14 @@ class HelpRequestForm(FlaskForm):
     ])
 
 
+
+class CoordinatorHelpRequestForm(HelpRequestForm):
+    """The coordinator can submit a request for any school, so they pick it.
+    Teachers never get this field: their school comes from their account.
+    The route fills `choices` from the schools table, and SelectField only
+    accepts one of those ids."""
+    school_id = SelectField("School", coerce=int, validators=[DataRequired(message="Choose a school.")])
+
 class ShiftRowForm(Form):
     """One shift inside the approve form. A plain Form (not FlaskForm)
     because the outer ApproveForm already carries the CSRF token."""
