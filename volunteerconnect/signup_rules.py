@@ -18,6 +18,8 @@ checks inside eligibility_errors().
 """
 from werkzeug.exceptions import NotFound
 
+from .volunteer_status import volunteer_statuses
+
 LATE_CANCEL_HOURS = 24          # rule 7 (placeholder to confirm with the coordinator)
 ACTIVE_SIGNUP = ("confirmed", "waitlisted")
 # Statuses that take up one of the shift's spots.
@@ -73,7 +75,9 @@ def check_shift_open(shift):
 
 def check_clearance(cur, volunteer, shift):
     """Rule 1: every clearance the school requires, unexpired on the shift date."""
-    if volunteer["status"] != "active":
+    # Status is derived from unexpired clearances, never read from the stored
+    # users.status column, which goes stale when a clearance expires.
+    if volunteer_statuses([volunteer["id"]]).get(volunteer["id"]) != "active":
         return "Your account is pending until the coordinator records your clearances."
     cur.execute(
         """SELECT req.type

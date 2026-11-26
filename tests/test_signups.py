@@ -139,6 +139,27 @@ def test_pending_volunteer_refused(client):
     assert signup_of(volunteer, shift) is None
 
 
+def test_volunteer_whose_only_clearance_expired_yesterday_is_pending(client):
+    """Status is derived from unexpired clearances, not the stored column.
+    The school requires nothing, so only the derived status can block them."""
+    open_school = make_school(required=[])
+    shift = make_shift(open_school["id"])
+    volunteer = cleared_volunteer()  # stored users.status is 'active'
+    run_sql("UPDATE clearances SET expires_on = (now() AT TIME ZONE 'America/Los_Angeles')::date - 1 "
+            "WHERE volunteer_id = %s", (volunteer["id"],))
+    assert one("SELECT status FROM users WHERE id = %s", (volunteer["id"],))["status"] == "active"
+
+    login_as(client, volunteer["id"])
+    page = client.get("/shifts")
+    assert f"/shifts/{shift['id']}/signup".encode() not in page.data
+    assert b"pending" in page.data
+
+    resp = sign_up(client, volunteer, shift)
+    assert resp.status_code == 400
+    assert b"pending" in resp.data
+    assert signup_of(volunteer, shift) is None
+
+
 # ---------- rule 2: capacity and waitlist ----------
 
 def test_third_volunteer_on_two_person_shift_is_waitlisted(client, school):
