@@ -87,7 +87,7 @@ flowchart TD
 
 The coordinator can approve a help request into shifts, reject it, or send it back to the teacher with a note; the teacher edits and resubmits, and this can repeat until the request is approved or rejected. A sign-up is confirmed only when the server's rules pass and the shift has a free spot; if the volunteer passes the rules but the shift is full, they are waitlisted. When a confirmed volunteer cancels, the first waitlisted volunteer who still passes the rules is promoted automatically. Only attendance marked present turns into hours. In Phase 2, an approved swap moves a confirmed sign-up to another shift.
 
-**Statuses.** Help request: submitted → changes_requested → submitted (repeatable) → approved or rejected. Shift: open → full → completed, or cancelled. Sign-up: confirmed or waitlisted → cancelled, present or no_show.
+**Statuses.** Help request: submitted → changes_requested → submitted (repeatable) → approved or rejected. Shift: open → full → completed (closed by the coordinator after the end time, once everyone is marked; the coordinator can reopen it to open or full to correct attendance), or cancelled. Sign-up: confirmed or waitlisted → cancelled, present or no_show.
 
 ## Requirements by phase
 
@@ -129,7 +129,7 @@ These are the back-end checks that make this more than storing records. Each run
 7. **Cancellation window.** Cancelling within 24 hours of the start counts as a late cancel.
 8. **No-show strikes (Phase 2).** Three no-shows or late cancels in 60 days block new sign-ups for 14 days.
 9. **Hours.** Only shifts marked present count; hours = shift end minus start.
-10. **Attendance timing.** Attendance can be confirmed only after the shift has started.
+10. **Attendance timing.** Attendance can be confirmed only after the shift has started, and can be changed until the coordinator closes the shift. The coordinator can close a shift only after its scheduled end time has passed and every confirmed volunteer is marked. The coordinator can reopen a closed shift to correct attendance, then close it again.
 11. **Rejoining.** A volunteer who cancels can sign up for the same shift again. This reuses their existing signups row and sets `created_at` to now, so they go to the back of the waitlist. This is why the unique (shift_id, volunteer_id) constraint is kept: each volunteer has at most one row per shift, whatever its history.
 12. **Waitlist expiry.** When a shift starts, any remaining waitlisted sign-ups become cancelled.
 
