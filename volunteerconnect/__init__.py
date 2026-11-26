@@ -55,6 +55,7 @@ def create_app(test_config=None):
     from .clearances import bp as volunteers_bp
     from .help_requests import bp as help_requests_bp
     from .main import bp as main_bp
+    from .reports import bp as reports_bp
     from .schools import bp as schools_bp
     from .signups import bp as signups_bp
     app.register_blueprint(main_bp)
@@ -63,6 +64,7 @@ def create_app(test_config=None):
     app.register_blueprint(volunteers_bp)
     app.register_blueprint(help_requests_bp)
     app.register_blueprint(signups_bp)
+    app.register_blueprint(reports_bp)
 
     # Load the logged-in user (or None) into g.user before every request.
     app.before_request(load_current_user)
@@ -71,6 +73,11 @@ def create_app(test_config=None):
     def inject_user():
         # Makes `current_user` and the navbar's logout form available in every template.
         return {"current_user": g.get("user"), "logout_form": LogoutForm()}
+
+    @app.template_filter("hours")
+    def format_hours(value):
+        """3.50 -> "3.5", 2.00 -> "2", 0.25 -> "0.25"."""
+        return f"{float(value or 0):.2f}".rstrip("0").rstrip(".")
 
     @app.errorhandler(403)
     def forbidden(error):

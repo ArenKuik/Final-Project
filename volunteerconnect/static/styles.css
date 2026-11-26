@@ -1758,3 +1758,35 @@ h1 span {
   color: var(--teal-dark);
   font-weight: 600;
 }
+
+/* ---- Hours and reports ---- */
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table tfoot th {
+  border-top: 2px solid var(--line);
+  color: var(--navy);
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.total-hours {
+  margin: 0;
+  color: var(--muted);
+}
+
+.total-hours span {
+  color: var(--navy);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.page-width > h2 {
+  margin: 28px 0 12px;
+  color: var(--navy);
+  font-size: 1.2rem;
+}

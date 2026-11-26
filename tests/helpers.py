@@ -83,15 +83,15 @@ def make_shift(school_id, request_id=None, status="open", start_in=None, hours=2
         return one(
             "INSERT INTO shifts (request_id, school_id, start_at, end_at, capacity, status) VALUES "
             "(%s, %s, (%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles', "
-            "(%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles' + make_interval(hours => %s), "
+            "(%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles' + make_interval(mins => %s), "
             "%s, %s) RETURNING *",
-            (request_id, school_id, day, day, hours, capacity, status),
+            (request_id, school_id, day, day, round(hours * 60), capacity, status),
         )
     return one(
         "INSERT INTO shifts (request_id, school_id, start_at, end_at, capacity, status) VALUES "
-        "(%s, %s, date_trunc('minute', now()) + %s, date_trunc('minute', now()) + %s + make_interval(hours => %s), "
+        "(%s, %s, date_trunc('minute', now()) + %s, date_trunc('minute', now()) + %s + make_interval(mins => %s), "
         "%s, %s) RETURNING *",
-        (request_id, school_id, start_in, start_in, hours, capacity, status),
+        (request_id, school_id, start_in, start_in, round(hours * 60), capacity, status),
     )
 
 

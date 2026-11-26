@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "reports/_shift_table.html" import shift_table %}
+{% block title %}Hours | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <p class="form-switch-left"><a href="{{ url_for('reports.index') }}">← Reports</a></p>
+    <div class="page-heading">
+      <h1>{{ volunteer.email }}</h1>
+      <p class="total-hours"><span>{{ total|hours }}</span> hours</p>
+    </div>
+    {% if current_user.role == "teacher" %}
+      <p class="form-intro">Showing hours at your school only.</p>
+    {% endif %}
+    {{ shift_table(shifts, total) }}
+  </div>
+</section>
+{% endblock %}

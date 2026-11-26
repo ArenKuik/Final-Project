@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Reports | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading">
+      <h1>{{ "Hours at my school" if current_user.role == "teacher" else "Volunteer hours" }}</h1>
+      <p class="total-hours"><span>{{ total|hours }}</span> hours in total</p>
+    </div>
+
+    <h2>By school</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>School</th><th class="num">Volunteers</th><th class="num">Shifts attended</th><th class="num">Hours</th></tr></thead>
+        <tbody>
+          {% for s in schools %}
+            <tr>
+              <td>{{ s.name }}</td>
+              <td class="num">{{ s.volunteers }}</td>
+              <td class="num">{{ s.shifts }}</td>
+              <td class="num">{{ s.hours|hours }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>By volunteer</h2>
+    {% if volunteers %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Volunteer</th><th class="num">Shifts attended</th><th class="num">Hours</th></tr></thead>
+          <tbody>
+            {% for v in volunteers %}
+              <tr>
+                <td><a href="{{ url_for('reports.volunteer_hours', volunteer_id=v.id) }}">{{ v.email }}</a></td>
+                <td class="num">{{ v.shifts }}</td>
+                <td class="num">{{ v.hours|hours }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>No volunteers yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

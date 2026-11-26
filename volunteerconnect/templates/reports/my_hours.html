@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "reports/_shift_table.html" import shift_table %}
+{% block title %}My hours | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading">
+      <h1>My hours</h1>
+      <p class="total-hours"><span>{{ total|hours }}</span> hours</p>
+    </div>
+    {{ shift_table(shifts, total) }}
+  </div>
+</section>
+{% endblock %}
