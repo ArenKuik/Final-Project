@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Shift | VolunteerConnect{% endblock %}
+{% block content %}
+{% macro remove_button(s) %}
+  <form class="inline-form" method="post" action="{{ url_for('signups.remove', signup_id=s.id) }}"
+        onsubmit="return confirm('Remove this volunteer from the shift?');">
+    {{ action_form.hidden_tag() }}
+    <button class="button button-small button-outline" type="submit">Remove</button>
+  </form>
+{% endmacro %}
+<section class="section-space">
+  <div class="form-card form-card-wide">
+    {% if shift.request_id %}
+      <p class="form-switch-left"><a href="{{ url_for('help_requests.request_detail', request_id=shift.request_id) }}">← Back to the request</a></p>
+    {% endif %}
+    <h1>{{ shift.activity or "Shift" }} at {{ shift.school_name }}</h1>
+    <dl class="detail-list">
+      <dt>When</dt><dd>{{ shift.start_local.strftime("%a %b %d, %Y") }}, {{ shift.start_local.strftime("%H:%M") }}–{{ shift.end_local.strftime("%H:%M") }}</dd>
+      <dt>Room</dt><dd>{{ shift.room or "—" }}</dd>
+      <dt>Capacity</dt><dd>{{ confirmed|length }} of {{ shift.capacity }} filled</dd>
+      <dt>Status</dt><dd><span class="status-badge shift-{{ shift.status }}">{{ shift.status|capitalize }}</span></dd>
+    </dl>
+
+    <h2>Signed up</h2>
+    {% if confirmed %}
+      <table class="data-table">
+        <thead><tr><th>Volunteer</th><th>Status</th>{% if current_user.role == "coordinator" %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+          {% for s in confirmed %}
+            <tr>
+              <td>{{ s.email }}</td>
+              <td><span class="status-badge signup-{{ s.status }}">{{ s.status.replace("_", " ")|capitalize }}</span></td>
+              {% if current_user.role == "coordinator" %}
+                <td>{% if s.status == "confirmed" %}{{ remove_button(s) }}{% endif %}</td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="form-intro">Nobody has signed up yet.</p>
+    {% endif %}
+
+    <h2>Waitlist</h2>
+    {% if waitlist %}
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Volunteer</th><th>Joined</th>{% if current_user.role == "coordinator" %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+          {% for s in waitlist %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ s.email }}</td>
+              <td>{{ s.created_at.strftime("%b %d %H:%M") }}</td>
+              {% if current_user.role == "coordinator" %}<td>{{ remove_button(s) }}</td>{% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="form-intro">No one is waiting.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

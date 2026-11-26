@@ -1745,3 +1745,16 @@ h1 span {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Sign-ups ---- */
+
+.signup-confirmed { background: var(--pale-teal); color: var(--teal-dark); }
+.signup-waitlisted { background: #fff1d6; color: #8a5a00; }
+.signup-cancelled { background: var(--line); color: var(--muted); }
+.signup-present { background: var(--pale-blue); color: var(--blue-dark); }
+.signup-no_show { background: #fdecea; color: #b42318; }
+
+.spots-left {
+  color: var(--teal-dark);
+  font-weight: 600;
+}

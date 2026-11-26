@@ -16,6 +16,7 @@ from .db import query, today_la, transaction
 from .decorators import role_required
 from .forms import (ActionForm, ApproveForm, CoordinatorHelpRequestForm, HelpRequestForm,
                     RejectForm, SendBackForm)
+from .signup_rules import cancel_shift_signups
 
 bp = Blueprint("help_requests", __name__)
 
@@ -296,8 +297,8 @@ def cancel_shift(shift_id):
             abort(404)
         if shift["status"] not in CANCELLABLE_SHIFT_STATUSES:
             abort(409, description=f"This shift is already {shift['status']}.")
-        # TODO (sign-ups milestone): also cancel this shift's sign-ups.
         cur.execute("UPDATE shifts SET status = 'cancelled' WHERE id = %s", (shift_id,))
+        cancel_shift_signups(cur, shift_id)
 
     flash("Shift cancelled.", "success")
     if shift["request_id"]:

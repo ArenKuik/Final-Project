@@ -20,6 +20,11 @@
         <a class="button button-primary" href="{{ url_for('help_requests.new_request') }}">New help request</a>
         <a class="button button-outline" href="{{ url_for('help_requests.list_requests') }}">My school's requests</a>
       </div>
+    {% elif current_user.role == "volunteer" %}
+      <div class="dashboard-actions">
+        <a class="button button-primary" href="{{ url_for('signups.list_shifts') }}">Find shifts</a>
+        <a class="button button-outline" href="{{ url_for('signups.my_signups') }}">My sign-ups</a>
+      </div>
     {% else %}
       <p class="form-intro">More tools for your role are on the way.</p>
     {% endif %}
