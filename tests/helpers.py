@@ -61,6 +61,28 @@ def make_school(required=()):
     )
 
 
+def make_request(school_id, teacher_id, status="submitted", day=None,
+                 start="09:00", end="11:00", needed=2, note=None):
+    """Insert a help request directly; returns the row."""
+    return one(
+        "INSERT INTO help_requests (school_id, teacher_id, activity, room, date, start_time, "
+        "end_time, volunteers_needed, status, coordinator_note) "
+        "VALUES (%s, %s, 'TEST activity', 'Room 1', %s, %s, %s, %s, %s, %s) RETURNING *",
+        (school_id, teacher_id, day or future(30), start, end, needed, status, note),
+    )
+
+
+def make_shift(school_id, request_id=None, status="open"):
+    """Insert a shift directly (30 days ahead, 09:00-11:00 LA time); returns the row."""
+    day = future(30)
+    return one(
+        "INSERT INTO shifts (request_id, school_id, start_at, end_at, capacity, status) VALUES "
+        "(%s, %s, (%s::date + '09:00'::time) AT TIME ZONE 'America/Los_Angeles', "
+        "(%s::date + '11:00'::time) AT TIME ZONE 'America/Los_Angeles', 2, %s) RETURNING *",
+        (request_id, school_id, day, day, status),
+    )
+
+
 def make_user(role, school_id=None, status=None):
     """Insert a user directly (no web request); returns the row."""
     status = status or ("pending" if role == "volunteer" else "active")
@@ -84,6 +106,10 @@ def login_as(client, user_id):
 
 def delete_test_data():
     """Remove everything the tests created. Order matters because of foreign keys."""
+    run_sql("DELETE FROM shifts WHERE school_id IN "
+            "(SELECT id FROM schools WHERE name LIKE 'TEST %%' OR invite_code LIKE 'TEST-%%')")
+    run_sql("DELETE FROM help_requests WHERE school_id IN "
+            "(SELECT id FROM schools WHERE name LIKE 'TEST %%' OR invite_code LIKE 'TEST-%%')")
     run_sql("DELETE FROM clearances WHERE volunteer_id IN "
             "(SELECT id FROM users WHERE email LIKE 'test-%%@example.test')")
     run_sql("DELETE FROM users WHERE email LIKE 'test-%%@example.test'")
@@ -96,7 +122,9 @@ def counts():
         "SELECT (SELECT count(*) FROM schools) AS schools, "
         "(SELECT count(*) FROM clearances) AS clearances, "
         "(SELECT string_agg(invite_code || name || coalesce(array_to_string(required_clearances, ','), ''), '|' ORDER BY id) FROM schools) AS school_data, "
-        "(SELECT string_agg(type || expires_on::text, '|' ORDER BY id) FROM clearances) AS clearance_data"
+        "(SELECT string_agg(type || expires_on::text, '|' ORDER BY id) FROM clearances) AS clearance_data, "
+        "(SELECT string_agg(status || coalesce(coordinator_note, '') || activity || date::text, '|' ORDER BY id) FROM help_requests) AS request_data, "
+        "(SELECT string_agg(status || capacity::text || start_at::text, '|' ORDER BY id) FROM shifts) AS shift_data"
     )
 
 

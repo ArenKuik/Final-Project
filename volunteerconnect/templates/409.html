@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Can't do that | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <h1>That change isn't possible</h1>
+    <p>{{ message or "This record has changed and that action no longer applies." }}</p>
+    <a class="button button-primary" href="{{ request.referrer or url_for('main.dashboard') }}">Go back</a>
+  </div>
+</section>
+{% endblock %}

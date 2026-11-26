@@ -53,12 +53,14 @@ def create_app(test_config=None):
     from .auth import bp as auth_bp, load_current_user
     from .forms import LogoutForm
     from .clearances import bp as volunteers_bp
+    from .help_requests import bp as help_requests_bp
     from .main import bp as main_bp
     from .schools import bp as schools_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(schools_bp)
     app.register_blueprint(volunteers_bp)
+    app.register_blueprint(help_requests_bp)
 
     # Load the logged-in user (or None) into g.user before every request.
     app.before_request(load_current_user)
@@ -71,5 +73,10 @@ def create_app(test_config=None):
     @app.errorhandler(403)
     def forbidden(error):
         return render_template("403.html"), 403
+
+    @app.errorhandler(409)
+    def conflict(error):
+        # e.g. approving a request that was already rejected
+        return render_template("409.html", message=error.description), 409
 
     return app

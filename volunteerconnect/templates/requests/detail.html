@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% from "_field.html" import field_row %}
+{% from "requests/_status.html" import status_badge %}
+{% block title %}{{ req.activity }} | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card form-card-wide">
+    <p class="form-switch-left"><a href="{{ url_for('help_requests.list_requests') }}">← All requests</a></p>
+    <h1>{{ req.activity }}</h1>
+    <p>{{ status_badge(req.status) }}</p>
+
+    <dl class="detail-list">
+      <dt>School</dt><dd>{{ req.school_name }}</dd>
+      <dt>Room</dt><dd>{{ req.room or "—" }}</dd>
+      <dt>Date</dt><dd>{{ req.date.isoformat() }}</dd>
+      <dt>Time</dt><dd>{{ req.start_time.strftime("%H:%M") }}–{{ req.end_time.strftime("%H:%M") }}</dd>
+      <dt>Volunteers needed</dt><dd>{{ req.volunteers_needed }}</dd>
+      <dt>Requested by</dt><dd>{{ req.teacher_email }}</dd>
+    </dl>
+
+    {% if req.coordinator_note %}
+      <div class="coordinator-note">
+        <strong>Coordinator's note:</strong>
+        <p>{{ req.coordinator_note }}</p>
+      </div>
+    {% endif %}
+
+    {% if current_user.role == "teacher" and req.status == "changes_requested" %}
+      <a class="button button-primary" href="{{ url_for('help_requests.edit_request', request_id=req.id) }}">Edit and resubmit</a>
+    {% endif %}
+
+    {% if shifts %}
+      <h2>Shifts</h2>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Time</th><th>Volunteers</th><th>Status</th>{% if current_user.role == "coordinator" %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+          {% for s in shifts %}
+            <tr>
+              <td>{{ s.start_local.strftime("%Y-%m-%d") }}</td>
+              <td>{{ s.start_local.strftime("%H:%M") }}–{{ s.end_local.strftime("%H:%M") }}</td>
+              <td>{{ s.capacity }}</td>
+              <td><span class="status-badge shift-{{ s.status }}">{{ s.status|capitalize }}</span></td>
+              {% if current_user.role == "coordinator" %}
+                <td>
+                  {% if s.status in ("open", "full") %}
+                    <form class="inline-form" method="post" action="{{ url_for('help_requests.cancel_shift', shift_id=s.id) }}"
+                          onsubmit="return confirm('Cancel this shift?');">
+                      {{ action_form.hidden_tag() }}
+                      <button class="button button-small button-outline" type="submit">Cancel</button>
+                    </form>
+                  {% endif %}
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% if current_user.role == "coordinator" and can_move(req.status, "approved") %}
+      <h2>Approve into shifts</h2>
+      <p class="form-intro">Start with one shift matching the request, or split it into several (up to 6).</p>
+      <form method="post" action="{{ url_for('help_requests.approve_request', request_id=req.id) }}" novalidate>
+        {{ approve_form.hidden_tag() }}
+        <div id="shift-rows">
+          {% for row in approve_form.shifts %}
+            <fieldset class="shift-row">
+              <legend>Shift {{ loop.index }}</legend>
+              <div class="field-pair">
+                {{ field_row(row.form.date) }}
+                {{ field_row(row.form.capacity, min=1) }}
+              </div>
+              <div class="field-pair">
+                {{ field_row(row.form.start_time) }}
+                {{ field_row(row.form.end_time) }}
+              </div>
+            </fieldset>
+          {% endfor %}
+        </div>
+        {% for error in approve_form.shifts.errors if error is string %}<p class="field-error">{{ error }}</p>{% endfor %}
+        <button class="button button-small button-outline" type="button" id="add-shift">+ Add another shift</button>
+        <button class="button button-primary form-submit" type="submit">Approve and create shifts</button>
+      </form>
+
+      <h2>Send back for changes</h2>
+      <form method="post" action="{{ url_for('help_requests.send_back_request', request_id=req.id) }}" novalidate>
+        {{ send_back_form.hidden_tag() }}
+        {{ field_row(send_back_form.note, rows=3) }}
+        <button class="button button-outline form-submit" type="submit">Send back to teacher</button>
+      </form>
+
+      <h2>Reject</h2>
+      <form method="post" action="{{ url_for('help_requests.reject_request', request_id=req.id) }}" novalidate
+            onsubmit="return confirm('Reject this request? This cannot be undone.');">
+        {{ reject_form.hidden_tag() }}
+        {{ field_row(reject_form.reject_note, rows=2) }}
+        <button class="button button-outline form-submit" type="submit">Reject request</button>
+      </form>
+
+      <script>
+        // "Add another shift": copy the last shift row and renumber its fields
+        // (shifts-0-date -> shifts-1-date). The server validates every row.
+        (function () {
+          var rows = document.getElementById("shift-rows");
+          var button = document.getElementById("add-shift");
+          var MAX = 6;
+          button.addEventListener("click", function () {
+            var all = rows.querySelectorAll(".shift-row");
+            if (all.length >= MAX) return;
+            var copy = all[all.length - 1].cloneNode(true);
+            var n = all.length;
+            copy.querySelector("legend").textContent = "Shift " + (n + 1);
+            copy.querySelectorAll("[name], [id], [for]").forEach(function (el) {
+              ["name", "id", "for"].forEach(function (attr) {
+                var v = el.getAttribute(attr);
+                if (v) el.setAttribute(attr, v.replace(/shifts-\d+-/, "shifts-" + n + "-"));
+              });
+            });
+            copy.querySelectorAll(".field-error").forEach(function (e) { e.remove(); });
+            rows.appendChild(copy);
+            if (n + 1 >= MAX) button.disabled = true;
+          });
+        })();
+      </script>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
