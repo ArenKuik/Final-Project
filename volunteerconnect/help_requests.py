@@ -14,7 +14,8 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 
 from .db import query, today_la, transaction
 from .decorators import role_required
-from .forms import (ActionForm, ApproveForm, HelpRequestForm, RejectForm, SendBackForm)
+from .forms import (ActionForm, ApproveForm, CoordinatorHelpRequestForm, HelpRequestForm,
+                    RejectForm, SendBackForm)
 from .signup_rules import cancel_shift_signups
 
 bp = Blueprint("help_requests", __name__)
@@ -143,17 +144,31 @@ def request_detail(request_id):
 # ---------- teacher: submit and resubmit ----------
 
 @bp.route("/requests/new", methods=["GET", "POST"])
-@role_required("teacher")
+@role_required("teacher", "coordinator")
 def new_request():
-    form = HelpRequestForm()
+    if g.user["role"] == "coordinator":
+        # The coordinator picks any existing school.
+        form = CoordinatorHelpRequestForm()
+        form.school_id.choices = [(0, "Choose a school…")] + [
+            (s["id"], s["name"]) for s in query("SELECT id, name FROM schools ORDER BY name")]
+    else:
+        # Teachers get a form with no school field at all.
+        form = HelpRequestForm()
+
     if form.validate_on_submit() and reject_past_date(form.date, today_la()):
+        # A teacher's school always comes from their account, never from the
+        # form (even if someone posts a school_id by hand).
+        if g.user["role"] == "coordinator":
+            school_id = form.school_id.data
+        else:
+            school_id = g.user["school_id"]
         row = query(
             """INSERT INTO help_requests
                    (school_id, teacher_id, activity, room, date, start_time, end_time,
                     volunteers_needed, status)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'submitted') RETURNING id""",
-            # school_id comes from the teacher's account, never from the form.
-            (g.user["school_id"], g.user["id"], form.activity.data.strip(),
+            # teacher_id records who asked (the coordinator, for their own requests).
+            (school_id, g.user["id"], form.activity.data.strip(),
              (form.room.data or "").strip() or None, form.date.data,
              form.start_time.data, form.end_time.data, form.volunteers_needed.data),
             one=True,

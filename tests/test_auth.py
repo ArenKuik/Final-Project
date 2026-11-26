@@ -83,6 +83,7 @@ def cleanup():
     yield
     run_sql("DELETE FROM users WHERE email LIKE 'test-%%@example.test'")
     run_sql("DELETE FROM schools WHERE invite_code LIKE 'TEST-%%'")
+    run_sql("DELETE FROM login_attempts WHERE email LIKE 'test-%%@example.test'")
 
 
 # ---------- register ----------
@@ -140,13 +141,17 @@ def test_short_password_rejected(client):
     assert get_user(email) is None
 
 
-def test_duplicate_email_rejected(client):
+@pytest.mark.parametrize("variant", [str, str.upper, str.title])
+def test_duplicate_email_rejected(client, variant):
+    """Registering an email that already exists, in any upper/lower case,
+    shows an error and creates no second user."""
     email = new_email()
     register(client, email)
-    resp = register(client, email)
+    resp = register(client, variant(email))
     assert resp.status_code == 200
     assert b"already exists" in resp.data
-    assert run_sql("SELECT count(*) AS n FROM users WHERE email = %s", (email,))[0]["n"] == 1
+    rows = run_sql("SELECT count(*) AS n FROM users WHERE lower(email) = %s", (email,))
+    assert rows[0]["n"] == 1
 
 
 def test_password_stored_as_hash(client):
@@ -237,3 +242,82 @@ def test_post_without_csrf_token_is_rejected(app, client):
         assert resp.status_code == 400
     finally:
         app.config["WTF_CSRF_ENABLED"] = False
+
+
+# ---------- login rate limiting ----------
+
+def fail_logins(client, email, times):
+    for _ in range(times):
+        resp = login(client, email, password="wrong-password-123")
+        assert b"Invalid email or password." in resp.data
+
+
+def failures_recorded(email):
+    return run_sql("SELECT count(*) AS n FROM login_attempts WHERE email = %s", (email,))[0]["n"]
+
+
+def test_five_failures_lock_out_even_the_right_password(client):
+    email = new_email()
+    register(client, email)
+    fail_logins(client, email, 4)
+    assert login(client, email).status_code == 302  # 4 failures: still allowed
+    client.post("/logout")
+
+    fail_logins(client, email, 5)
+    resp = login(client, email)  # correct password
+    assert resp.status_code == 200
+    assert b"Too many failed login attempts" in resp.data
+    with client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+def test_lockout_message_same_for_unknown_email(client):
+    """The lock doesn't reveal whether an account exists."""
+    unknown = new_email()
+    fail_logins(client, unknown, 5)
+    resp = login(client, unknown)
+    assert b"Too many failed login attempts" in resp.data
+
+
+def test_login_works_after_window_passes(client):
+    email = new_email()
+    register(client, email)
+    fail_logins(client, email, 5)
+    assert b"Too many failed login attempts" in login(client, email).data
+
+    # 16 minutes later (moved back in time by SQL).
+    run_sql("UPDATE login_attempts SET attempted_at = attempted_at - interval '16 minutes' "
+            "WHERE email = %s", (email,))
+    assert login(client, email).status_code == 302
+    assert failures_recorded(email) == 0  # success cleared the count
+
+
+def test_success_resets_the_count(client):
+    email = new_email()
+    register(client, email)
+    fail_logins(client, email, 4)
+    assert login(client, email).status_code == 302
+    assert failures_recorded(email) == 0
+    client.post("/logout")
+
+    # Four more failures are allowed again; the earlier four don't count.
+    fail_logins(client, email, 4)
+    assert login(client, email).status_code == 302
+
+
+def test_limit_is_per_email(client):
+    locked, other = new_email(), new_email()
+    register(client, locked)
+    register(client, other)
+    fail_logins(client, locked, 5)
+    assert b"Too many failed login attempts" in login(client, locked).data
+    assert login(client, other).status_code == 302
+
+
+def test_locked_attempts_are_not_counted_and_email_case_is_ignored(client):
+    email = new_email()
+    register(client, email)
+    fail_logins(client, email.upper(), 5)  # same account, typed in capitals
+    assert b"Too many failed login attempts" in login(client, email).data
+    login(client, email)  # refused while locked: not recorded
+    assert failures_recorded(email) == 5

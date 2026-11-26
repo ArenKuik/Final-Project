@@ -6,9 +6,7 @@
   <div class="page-width">
     <div class="page-heading">
       <h1>{{ "My school's requests" if current_user.role == "teacher" else "Help requests" }}</h1>
-      {% if current_user.role == "teacher" %}
-        <a class="button button-primary" href="{{ url_for('help_requests.new_request') }}">New help request</a>
-      {% endif %}
+      <a class="button button-primary" href="{{ url_for('help_requests.new_request') }}">New help request</a>
     </div>
 
     {% if current_user.role == "coordinator" %}

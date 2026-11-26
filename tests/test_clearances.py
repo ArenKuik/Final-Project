@@ -1,6 +1,9 @@
 """Coordinator clearance management and volunteer pending/active status."""
+import re
+
 import pytest
 
+from volunteerconnect.volunteer_status import VOLUNTEER_STATUS_SQL
 from tests.helpers import (assert_forbidden_everywhere, coordinator_id, future, login_as,
                            make_school, make_user, one, past, run_sql)
 
@@ -20,7 +23,8 @@ def record(client, volunteer_id, type_="tb_test", expires_on=None):
 
 
 def status_of(user_id):
-    return one("SELECT status FROM users WHERE id = %s", (user_id,))["status"]
+    """The volunteer's derived status (the stored column is not authoritative)."""
+    return one(VOLUNTEER_STATUS_SQL, ([user_id],))["status"]
 
 
 def clearances_of(user_id):
@@ -133,3 +137,26 @@ def test_non_coordinators_get_403(app, client, coordinator, role):
         post_data={"type": "background_check", "expires_on": future().isoformat()},
     )
     assert status_of(target["id"]) == "active"
+
+
+def test_expired_clearance_makes_volunteer_pending_without_any_action(client, coordinator):
+    """Review feedback: status must not stay 'active' after the last clearance
+    expires on its own, with no record or revoke."""
+    volunteer = make_user("volunteer")
+    record(coordinator, volunteer["id"])
+    assert status_of(volunteer["id"]) == "active"
+
+    # The clearance expires: yesterday in Los Angeles, set directly in the database.
+    run_sql("UPDATE clearances SET expires_on = (now() AT TIME ZONE 'America/Los_Angeles')::date - 1 "
+            "WHERE volunteer_id = %s", (volunteer["id"],))
+    assert status_of(volunteer["id"]) == "pending"
+
+    # Coordinator's volunteers list and detail page show Pending.
+    rows = re.findall(rb"<tr>(.*?)</tr>", coordinator.get("/volunteers").data, flags=re.S)
+    (row,) = [r for r in rows if volunteer["email"].encode() in r]
+    assert b"status-pending" in row and b"status-active" not in row
+    assert b"status-pending" in coordinator.get(f"/volunteers/{volunteer['id']}").data
+
+    # The volunteer's own dashboard shows the pending note.
+    login_as(client, volunteer["id"])
+    assert b"Your account is pending" in client.get("/dashboard").data

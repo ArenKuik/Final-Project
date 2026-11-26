@@ -13,6 +13,7 @@
     {% endif %}
     <form method="post" novalidate>
       {{ form.hidden_tag() }}
+      {% if form.school_id is defined %}{{ field_row(form.school_id) }}{% endif %}{# coordinator only #}
       {{ field_row(form.activity, placeholder="e.g. Reading buddies") }}
       {{ field_row(form.room, placeholder="e.g. Room 12") }}
       {{ field_row(form.date) }}

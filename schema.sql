@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role          TEXT NOT NULL CHECK (role IN ('coordinator', 'teacher', 'volunteer')),
     school_id     BIGINT REFERENCES schools(id),
+    -- For volunteers this column is NOT authoritative: their status is derived
+    -- from unexpired clearances (volunteerconnect/volunteer_status.py).
     status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active')),
     blocked_until TIMESTAMPTZ,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -98,5 +100,16 @@ CREATE TABLE IF NOT EXISTS strikes (
     reason       TEXT NOT NULL CHECK (reason IN ('no_show', 'late_cancel')),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Failed logins, for rate limiting (see auth.py). Kept in the database, not
+-- in memory, because Cloud Run may run several copies of the app at once.
+-- `email` is whatever was typed (lowercased): it may not belong to any
+-- account, so nothing here reveals which emails are registered.
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id           BIGSERIAL PRIMARY KEY,
+    email        TEXT NOT NULL,
+    attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS login_attempts_email_time ON login_attempts (email, attempted_at);
 
 -- Future schema changes go below, as ALTER TABLE ... IF NOT EXISTS.

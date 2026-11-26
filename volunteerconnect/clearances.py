@@ -1,20 +1,27 @@
 """Coordinator: record and revoke volunteer clearances.
 
 A volunteer is 'active' while they hold at least one unexpired clearance,
-and 'pending' otherwise. The status is recalculated in the same transaction
-every time a clearance is recorded or revoked.
+and 'pending' otherwise. That status is always derived when it is shown
+(see volunteer_status.py), so it is right even after a clearance quietly
+expires.
 """
 from flask import Blueprint, abort, flash, g, redirect, render_template, url_for
 
 from .db import query, today_la, transaction
 from .decorators import role_required
 from .forms import CLEARANCE_TYPES, ActionForm, ClearanceForm
+from .volunteer_status import volunteer_statuses
 
 bp = Blueprint("volunteers", __name__, url_prefix="/volunteers")
 
 
 def refresh_volunteer_status(cur, volunteer_id):
-    """Set the volunteer to active if any clearance is unexpired, else pending."""
+    """Keep the stored users.status roughly in step after a record/revoke.
+
+    The stored column is NOT authoritative for volunteers (it goes stale when
+    a clearance expires on its own); pages use volunteer_statuses() instead.
+    It is still written because code on later branches reads it until those
+    branches switch to the helper too."""
     cur.execute(
         """UPDATE users SET status = CASE
                 WHEN EXISTS (SELECT 1 FROM clearances
@@ -33,6 +40,7 @@ def get_volunteer_or_404(volunteer_id):
     )
     if volunteer is None:
         abort(404)
+    volunteer["status"] = volunteer_statuses([volunteer_id])[volunteer_id]  # derived, not stored
     return volunteer
 
 
@@ -48,7 +56,10 @@ def clearances_for(volunteer_id):
 @bp.route("")
 @role_required("coordinator")
 def list_volunteers():
-    volunteers = query("SELECT id, email, status FROM users WHERE role = 'volunteer' ORDER BY email")
+    volunteers = query("SELECT id, email FROM users WHERE role = 'volunteer' ORDER BY email")
+    statuses = volunteer_statuses([v["id"] for v in volunteers])  # derived, not stored
+    for v in volunteers:
+        v["status"] = statuses[v["id"]]
     rows = query(
         """SELECT c.volunteer_id, c.type, c.expires_on,
                   c.expires_on < (now() AT TIME ZONE 'America/Los_Angeles')::date AS expired

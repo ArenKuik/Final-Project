@@ -146,12 +146,43 @@ def test_coordinator_filters(client, school, teacher):
 def test_school_id_comes_from_account_not_form(client, school, teacher):
     other_school = make_school()
     login_as(client, teacher["id"])
+    # The teacher's form has no school field at all.
+    assert b'name="school_id"' not in client.get("/requests/new").data
+
     data = request_form(activity="TEST injected")
-    data["school_id"] = str(other_school["id"])
-    client.post("/requests/new", data=data)
+    data["school_id"] = str(other_school["id"])  # hand-built POST
+    assert client.post("/requests/new", data=data).status_code == 302
     row = one("SELECT school_id FROM help_requests WHERE activity = 'TEST injected' AND teacher_id = %s",
               (teacher["id"],))
     assert row["school_id"] == school["id"]
+
+
+# ---------- coordinator submits ----------
+
+def test_coordinator_can_submit_for_any_school(client, school):
+    other_school = make_school()
+    login_as(client, coordinator_id())
+    page = client.get("/requests/new").data
+    assert b'name="school_id"' in page and other_school["name"].encode() in page
+
+    for target in (school, other_school):
+        data = {**request_form(activity="TEST by coordinator"), "school_id": str(target["id"])}
+        resp = client.post("/requests/new", data=data)
+        assert resp.status_code == 302
+        row = one("SELECT * FROM help_requests WHERE activity = 'TEST by coordinator' AND school_id = %s",
+                  (target["id"],))
+        assert row["teacher_id"] == coordinator_id()   # records who asked
+        assert row["status"] == "submitted"
+
+
+@pytest.mark.parametrize("school_value", ["", "0", "999999999", "not-a-number"])
+def test_coordinator_must_choose_a_real_school(client, school_value):
+    login_as(client, coordinator_id())
+    before = one("SELECT count(*) AS n FROM help_requests")["n"]
+    data = {**request_form(activity="TEST no school"), "school_id": school_value}
+    resp = client.post("/requests/new", data=data)
+    assert resp.status_code == 200
+    assert one("SELECT count(*) AS n FROM help_requests")["n"] == before
 
 
 def test_teacher_cannot_view_or_edit_other_schools_request(client, teacher):
