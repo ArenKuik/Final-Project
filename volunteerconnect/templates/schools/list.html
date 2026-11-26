@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Schools | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading">
+      <h1>Schools</h1>
+      <a class="button button-primary" href="{{ url_for('schools.create_school') }}">Add school</a>
+    </div>
+    {% if schools %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Address</th><th>Required clearances</th><th>Invite code</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for school in schools %}
+              <tr>
+                <td>{{ school.name }}</td>
+                <td>{{ school.address or "—" }}</td>
+                <td>
+                  {% for c in school.required_clearances %}{{ clearance_labels.get(c, c) }}{% if not loop.last %}, {% endif %}{% else %}None{% endfor %}
+                </td>
+                <td><code class="invite-code">{{ school.invite_code }}</code></td>
+                <td class="row-actions">
+                  <a class="button button-small button-outline" href="{{ url_for('schools.edit_school', school_id=school.id) }}">Edit</a>
+                  <form class="inline-form" method="post"
+                        action="{{ url_for('schools.regenerate_code', school_id=school.id) }}"
+                        onsubmit="return confirm('Generate a new code? The current code will stop working for new teachers.');">
+                    {{ action_form.hidden_tag() }}
+                    <button class="button button-small button-outline" type="submit">New code</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>No schools yet. Add the first one to get an invite code for its teachers.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_field.html" import field_row %}
+{% block title %}{{ "Edit school" if school else "Add school" }} | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <h1>{{ "Edit " ~ school.name if school else "Add a school" }}</h1>
+    {% if not school %}
+      <p class="form-intro">An invite code for this school's teachers is created automatically.</p>
+    {% endif %}
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field_row(form.name) }}
+      {{ field_row(form.address) }}
+      <fieldset class="form-field checkbox-group{% if form.required_clearances.errors %} has-error{% endif %}">
+        <legend>{{ form.required_clearances.label.text }}</legend>
+        {% for option in form.required_clearances %}
+          <label class="radio-option">{{ option() }} {{ option.label.text }}</label>
+        {% endfor %}
+        {% for error in form.required_clearances.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </fieldset>
+      <button class="button button-primary form-submit" type="submit">{{ "Save changes" if school else "Create school" }}</button>
+    </form>
+    <p class="form-switch"><a href="{{ url_for('schools.list_schools') }}">Back to schools</a></p>
+  </div>
+</section>
+{% endblock %}

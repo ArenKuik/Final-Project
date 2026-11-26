@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role          TEXT NOT NULL CHECK (role IN ('coordinator', 'teacher', 'volunteer')),
     school_id     BIGINT REFERENCES schools(id),
+    -- For volunteers this column is NOT authoritative: their status is derived
+    -- from unexpired clearances (volunteerconnect/volunteer_status.py).
     status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active')),
     blocked_until TIMESTAMPTZ,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

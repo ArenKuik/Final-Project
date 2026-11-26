@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import psycopg
-from flask import current_app
+from flask import current_app, g
 from psycopg.rows import dict_row
 from werkzeug.security import generate_password_hash
 
@@ -34,6 +34,27 @@ def get_conn(database_url=None):
     return psycopg.connect(url, row_factory=dict_row)
 
 
+def get_db():
+    """The connection for the current request, opened on first use.
+
+    Opening a connection to Neon takes about a second, so each request
+    reuses one connection for all its queries; close_db() closes it when the
+    request ends. autocommit=True means nothing is left half-open between
+    statements: every write happens inside an explicit transaction() block.
+    """
+    if "db" not in g:
+        g.db = psycopg.connect(current_app.config["DATABASE_URL"],
+                               row_factory=dict_row, autocommit=True)
+    return g.db
+
+
+def close_db(error=None):
+    """Registered with app.teardown_appcontext: runs after every request."""
+    conn = g.pop("db", None)
+    if conn is not None:
+        conn.close()
+
+
 @contextmanager
 def transaction(database_url=None):
     """Run several statements as one all-or-nothing unit.
@@ -45,8 +66,17 @@ def transaction(database_url=None):
 
     If the block finishes, everything is committed. If it raises, everything
     is rolled back.
+
+    Inside a request it uses the request's connection. With database_url
+    (used at startup, outside any request) it opens and closes its own.
     """
-    with get_conn(database_url) as conn:
+    if database_url:
+        with get_conn(database_url) as conn:
+            with conn.transaction():
+                with conn.cursor() as cur:
+                    yield cur
+    else:
+        conn = get_db()
         with conn.transaction():
             with conn.cursor() as cur:
                 yield cur
@@ -93,3 +123,12 @@ def seed_coordinator(cur):
         (email.strip().lower(), generate_password_hash(password, method=PASSWORD_HASH_METHOD)),
     )
     log.info("Seeded coordinator account.")
+
+
+# Business rules compare against the current time in Los Angeles (PRD,
+# "Time handling"). Cloud Run's clock is in UTC, so we ask Postgres, which
+# always has the time zone data. Queries that need "today" write the same
+# expression: (now() AT TIME ZONE 'America/Los_Angeles')::date
+def today_la():
+    """Today's date in Los Angeles."""
+    return query("SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date AS today", one=True)["today"]

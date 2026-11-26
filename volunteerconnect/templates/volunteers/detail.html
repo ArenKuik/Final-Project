@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_field.html" import field_row %}
+{% block title %}{{ volunteer.email }} | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card form-card-wide">
+    <p class="form-switch-left"><a href="{{ url_for('volunteers.list_volunteers') }}">← All volunteers</a></p>
+    <h1>{{ volunteer.email }}</h1>
+    <p>Status: <span class="status-badge status-{{ volunteer.status }}">{{ volunteer.status|capitalize }}</span></p>
+
+    <h2>Clearances</h2>
+    {% if clearances %}
+      <table class="data-table">
+        <thead><tr><th>Type</th><th>Expires</th><th>Verified</th><th></th></tr></thead>
+        <tbody>
+          {% for c in clearances %}
+            <tr class="{{ 'expired' if c.expired }}">
+              <td>{{ labels.get(c.type, c.type) }}</td>
+              <td>{{ c.expires_on.isoformat() }}{% if c.expired %} (expired){% endif %}</td>
+              <td>{{ c.verified_at.strftime("%Y-%m-%d") }}</td>
+              <td>
+                <form class="inline-form" method="post"
+                      action="{{ url_for('volunteers.revoke_clearance', volunteer_id=volunteer.id, clearance_id=c.id) }}"
+                      onsubmit="return confirm('Revoke this clearance?');">
+                  {{ action_form.hidden_tag() }}
+                  <button class="button button-small button-outline" type="submit">Revoke</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="form-intro">No clearances recorded yet.</p>
+    {% endif %}
+
+    <h2>Record a clearance</h2>
+    <p class="form-intro">If this volunteer already has that type, its expiry date is updated.</p>
+    <form method="post" action="{{ url_for('volunteers.record_clearance', volunteer_id=volunteer.id) }}" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field_row(form.type) }}
+      {{ field_row(form.expires_on) }}
+      <button class="button button-primary form-submit" type="submit">Record clearance</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

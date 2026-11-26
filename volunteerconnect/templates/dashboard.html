@@ -9,7 +9,14 @@
     {% if current_user.role == "volunteer" and current_user.status == "pending" %}
       <p class="form-intro">Your account is pending. You'll see open shifts once the coordinator records your clearances.</p>
     {% endif %}
-    <p class="form-intro">More tools for your role are on the way.</p>
+    {% if current_user.role == "coordinator" %}
+      <div class="dashboard-actions">
+        <a class="button button-primary" href="{{ url_for('schools.list_schools') }}">Schools</a>
+        <a class="button button-outline" href="{{ url_for('volunteers.list_volunteers') }}">Volunteers</a>
+      </div>
+    {% else %}
+      <p class="form-intro">More tools for your role are on the way.</p>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

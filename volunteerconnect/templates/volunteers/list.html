@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Volunteers | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="page-width">
+    <div class="page-heading"><h1>Volunteers</h1></div>
+    {% if volunteers %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Email</th><th>Status</th><th>Clearances</th><th></th></tr></thead>
+          <tbody>
+            {% for v in volunteers %}
+              <tr>
+                <td>{{ v.email }}</td>
+                <td><span class="status-badge status-{{ v.status }}">{{ v.status|capitalize }}</span></td>
+                <td>
+                  {% for c in clearances.get(v.id, []) %}
+                    <div class="{{ 'expired' if c.expired }}">
+                      {{ labels.get(c.type, c.type) }} — {{ "expired" if c.expired else "expires" }} {{ c.expires_on.isoformat() }}
+                    </div>
+                  {% else %}
+                    None
+                  {% endfor %}
+                </td>
+                <td><a class="button button-small button-outline" href="{{ url_for('volunteers.volunteer_detail', volunteer_id=v.id) }}">Manage</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>No volunteers have registered yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
