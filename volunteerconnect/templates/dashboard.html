@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <p class="eyebrow"><span class="eyebrow-dot"></span> Dashboard</p>
+    <h1>Welcome back</h1>
+    <p>You're logged in as a <span class="role-badge role-{{ current_user.role }}">{{ current_user.role|capitalize }}</span>.</p>
+    {% if current_user.role == "volunteer" and current_user.status == "pending" %}
+      <p class="form-intro">Your account is pending. You'll see open shifts once the coordinator records your clearances.</p>
+    {% endif %}
+    <p class="form-intro">More tools for your role are on the way.</p>
+  </div>
+</section>
+{% endblock %}

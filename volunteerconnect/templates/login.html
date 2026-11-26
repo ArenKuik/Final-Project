@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_field.html" import field_row %}
+{% block title %}Log in | VolunteerConnect{% endblock %}
+{% block content %}
+<section class="section-space">
+  <div class="form-card">
+    <h1>Log in</h1>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {% for error in form.form_errors %}
+        <p class="form-error" role="alert">{{ error }}</p>
+      {% endfor %}
+      {{ field_row(form.email, autocomplete="email") }}
+      {{ field_row(form.password, autocomplete="current-password") }}
+      <button class="button button-primary form-submit" type="submit">Log in</button>
+    </form>
+    <p class="form-switch">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+  </div>
+</section>
+{% endblock %}

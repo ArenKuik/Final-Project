@@ -1,0 +1,11 @@
+{# One form field with its label and any error messages. Usage: {{ field_row(form.email) }} #}
+{% macro field_row(field, hint=None) %}
+  <div class="form-field{% if field.errors %} has-error{% endif %}">
+    {{ field.label }}
+    {{ field(**kwargs) }}
+    {% if hint %}<p class="field-hint">{{ hint }}</p>{% endif %}
+    {% for error in field.errors %}
+      <p class="field-error">{{ error }}</p>
+    {% endfor %}
+  </div>
+{% endmacro %}

@@ -1,39 +1,6 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="VolunteerConnect helps teachers, coordinators, and cleared volunteers coordinate classroom support across six elementary schools."
-    >
-    <title>VolunteerConnect | Every helping hand, in the right place</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=2) }}">
-  </head>
-  <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-
-    <header class="site-header">
-      <nav class="navigation page-width" aria-label="Main navigation">
-        <a class="brand" href="#home" aria-label="VolunteerConnect home">
-          <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none">
-              <path d="M16 27s-11-6.7-11-14a6 6 0 0 1 11-3.1A6 6 0 0 1 27 13c0 7.3-11 14-11 14Z" fill="currentColor"/>
-              <path d="M9 16h4l2-4 3.2 8 2-4H24" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          <span>Volunteer<span class="brand-accent">Connect</span></span>
-        </a>
-
-        <div class="nav-links">
-          <a class="nav-link" href="#home" aria-current="page">Home</a>
-          <a class="nav-link" href="#how-it-works">How It Works</a>
-          <a class="button button-small button-outline" href="#access-coming-soon">Login</a>
-        </div>
-      </nav>
-    </header>
-
-    <main id="main-content">
+{# Homepage (Manya's design). The <head>, header and footer live in base.html. #}
+{% extends "base.html" %}
+{% block content %}
       <section class="hero section-space" id="home" aria-labelledby="hero-title">
         <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
         <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
@@ -45,7 +12,7 @@
               Bringing teachers, coordinators, and cleared volunteers together to make classroom support easier across six elementary schools.
             </p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#access-coming-soon">
+              <a class="button button-primary" href="{{ url_for('auth.register') }}">
                 Get Started
                 <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                   <path d="M4.2 10h11.6m-4.8-4.8 4.8 4.8-4.8 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -256,7 +223,7 @@
             <p class="eyebrow"><span class="eyebrow-dot"></span> Better together</p>
             <h2 id="closing-title">Every helping hand makes a difference.</h2>
             <p>Let’s make it easier for our school community to show up for one another.</p>
-            <a class="button button-primary" href="#access-coming-soon">
+            <a class="button button-primary" href="{{ url_for('auth.register') }}">
               Get Started
               <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                 <path d="M4.2 10h11.6m-4.8-4.8 4.8 4.8-4.8 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -270,32 +237,4 @@
           </div>
         </div>
       </section>
-    </main>
-
-    <footer class="site-footer" id="access-coming-soon">
-      <div class="footer-main page-width">
-        <div class="footer-brand">
-          <a class="brand brand-footer" href="#home">
-            <span class="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none">
-                <path d="M16 27s-11-6.7-11-14a6 6 0 0 1 11-3.1A6 6 0 0 1 27 13c0 7.3-11 14-11 14Z" fill="currentColor"/>
-                <path d="M9 16h4l2-4 3.2 8 2-4H24" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span>Volunteer<span class="brand-accent">Connect</span></span>
-          </a>
-          <p>Bringing people together to support classrooms and strengthen our school community.</p>
-        </div>
-        <div class="footer-access">
-          <p class="footer-label">Account access</p>
-          <p>Login and registration are coming soon.</p>
-          <span class="access-status"><span aria-hidden="true"></span> Public homepage preview</span>
-        </div>
-      </div>
-      <div class="footer-bottom page-width">
-        <span>Made for our school community</span>
-        <span>VolunteerConnect</span>
-      </div>
-    </footer>
-  </body>
-</html>
+{% endblock %}

@@ -7,7 +7,7 @@ seeds the coordinator, and registers the routes.
 import os
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, g, render_template
 from flask_wtf.csrf import CSRFProtect
 
 from . import db
@@ -48,7 +48,22 @@ def create_app(test_config=None):
     # Create any missing tables and the coordinator account.
     db.init_db(app.config["DATABASE_URL"])
 
+    from .auth import bp as auth_bp, load_current_user
+    from .forms import LogoutForm
     from .main import bp as main_bp
     app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp)
+
+    # Load the logged-in user (or None) into g.user before every request.
+    app.before_request(load_current_user)
+
+    @app.context_processor
+    def inject_user():
+        # Makes `current_user` and the navbar's logout form available in every template.
+        return {"current_user": g.get("user"), "logout_form": LogoutForm()}
+
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template("403.html"), 403
 
     return app
